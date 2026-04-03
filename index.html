@@ -511,7 +511,6 @@
     <div id="panel-tabs">
       <button class="ptab active" onclick="switchPanelTab('disruptions')">Disruptions</button>
       <button class="ptab" onclick="switchPanelTab('news')">News</button>
-      <button class="ptab" onclick="switchPanelTab('fm')">Force Majeure</button>
     </div>
     <div id="panel-search-wrap">
       <input id="panel-search" type="text" placeholder="Search company, country, product…" oninput="filterPanel()"/>
@@ -524,7 +523,7 @@
 <div id="tooltip">
   <div class="tt-card">
     <div class="tt-top-bar"></div>
-    <span class="tt-close" onclick="unpinTip();selectedId=null;renderGlobe();renderDisruptions();" title="Close">✕</span>
+    <span class="tt-close" onclick="unpinTip();selectedId=null;renderDisruptions();" title="Close">✕</span>
     <div class="tt-hd">
       <div class="tt-co" id="tt-co">—</div>
       <div class="tt-ctry" id="tt-ctry">—</div>
@@ -1523,8 +1522,7 @@ function initGlobe() {
     })
     .pointRadius(d => d.id === selectedId ? 1.05 : d.impact === 'High' ? 0.72 : d.impact === 'Medium' ? 0.52 : 0.38)
     .pointColor(d => markerColor(d.status, d.id === selectedId))
-    .pointResolution(24)
-    .onPointHover(onHover)
+    .pointResolution(6)
     .onPointClick(onClick)
     .pointsMerge(false);
 
@@ -1536,7 +1534,12 @@ function initGlobe() {
   globe.controls().minDistance     = 130;
   globe.controls().maxDistance     = 850;
 
-  el.addEventListener('mousedown',  pauseRot);
+  // Only pause auto-rotation when user actually drags (not on clicks)
+  let _dragStarted = false;
+  el.addEventListener('mousedown', () => { _dragStarted = false; });
+  el.addEventListener('mousemove', e => {
+    if (e.buttons === 1 && !_dragStarted) { _dragStarted = true; pauseRot(); }
+  });
   el.addEventListener('touchstart', pauseRot, { passive:true });
   window.addEventListener('resize', () => globe.width(el.clientWidth).height(el.clientHeight));
 
@@ -1593,39 +1596,86 @@ function moveTip(x, y) {
   tip.style.top  = ty + 'px';
 }
 
-// Show hover tooltip (follows mouse, dismissed on mouse leave)
-function showTipHover(d, evt) {
-  if (tipPinned) return;               // don't override a pinned tooltip
-  populateTip(d);
-  moveTip(evt.clientX, evt.clientY);
-  tip.classList.add('visible');
-  document.onmousemove = e => { if (!tipPinned) moveTip(e.clientX, e.clientY); };
+function unpinTip() {
+  tipPinned = false;
+  tip.classList.remove('visible', 'pinned');
+  tip.style.outline = '';
 }
 
-// Pin tooltip at a fixed screen position (from click)
 function pinTip(d, x, y) {
   tipPinned = true;
-  document.onmousemove = null;
+  _justPinned = true;
   populateTip(d);
   moveTip(x, y);
-  tip.classList.add('visible');
-  // Add a small close indicator to tooltip
+  tip.classList.add('visible', 'pinned');
   tip.style.outline = '1px solid rgba(248,161,0,0.4)';
 }
 
-function unpinTip() {
-  tipPinned = false;
-  tip.classList.remove('visible');
-  tip.style.outline = '';
-  document.onmousemove = null;
-}
-
-// Globe hover
-function onHover(pt, _p, evt) {
+// Hover tooltip via plain mousemove — no Globe.gl raycasting involved
+let _hoverThrottle = null;
+document.getElementById('globeViz').addEventListener('mousemove', e => {
   if (tipPinned) return;
-  if (pt) showTipHover(pt, evt);
-  else { tip.classList.remove('visible'); document.onmousemove = null; }
-}
+  if (_hoverThrottle) return;
+  _hoverThrottle = requestAnimationFrame(() => {
+    _hoverThrottle = null;
+    if (tipPinned || !globe) return;
+
+    const visible = getVisible();
+    let best = null, bestDist = Infinity;
+
+    // Primary: try globe surface coords (works when cursor is on the globe surface)
+    const coords = globe.toGlobeCoords(e.clientX, e.clientY);
+    if (coords) {
+      const threshold = 1.8;
+      for (const d of visible) {
+        const dlat = d.lat - coords.lat;
+        const dlng = d.lng - coords.lng;
+        const dist = Math.sqrt(dlat*dlat + dlng*dlng);
+        if (dist < threshold && dist < bestDist) { bestDist = dist; best = d; }
+      }
+    }
+
+    // Fallback: screen-space distance to projected marker positions
+    // Handles elevated markers (pointAltitude > 0) where toGlobeCoords returns null
+    if (!best) {
+      const el = document.getElementById('globeViz');
+      const rect = el.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const screenThreshold = 18; // px
+      for (const d of visible) {
+        const sc = globe.getScreenCoords(d.lat, d.lng, d.status === 'Shutdown' ? 0.035 : d.status === 'Maintenance' ? 0.028 : d.status === 'Reduced' ? 0.021 : 0.014);
+        if (!sc) continue;
+        const dx = sc.x - mx, dy = sc.y - my;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist < screenThreshold && dist < bestDist) { bestDist = dist; best = d; }
+      }
+    }
+
+    if (best) {
+      populateTip(best);
+      moveTip(e.clientX, e.clientY);
+      tip.classList.add('visible');
+    } else {
+      tip.classList.remove('visible');
+    }
+  });
+}, { passive: true });
+
+document.getElementById('globeViz').addEventListener('mouseleave', () => {
+  if (!tipPinned) tip.classList.remove('visible');
+});
+
+// Click anywhere outside the tooltip closes it
+let _justPinned = false;
+document.addEventListener('click', e => {
+  if (_justPinned) { _justPinned = false; return; }
+  if (tipPinned && !tip.contains(e.target)) {
+    unpinTip();
+    selectedId = null;
+    setTimeout(() => renderPanel(), 0);
+  }
+});
 
 // Globe click — pin tooltip, highlight panel item
 function onClick(pt, evt) {
@@ -1633,15 +1683,12 @@ function onClick(pt, evt) {
     // Clicked empty space — unpin & deselect
     unpinTip();
     selectedId = null;
-    // Defer panel update so globe event loop isn't blocked
-    setTimeout(() => renderDisruptions(), 0);
+    setTimeout(() => renderPanel(), 0);
     return;
   }
   selectedId = pt.id;
-  // Pin tooltip immediately at click coords (no globe re-render needed —
-  // the accessor closures will pick up the new selectedId on next frame)
   pinTip(pt, evt.clientX, evt.clientY);
-  // Defer panel work to next tick so we don't block the globe's event handler
+  // Switch panel to disruptions and scroll — deferred so we don't block globe's event handler
   setTimeout(() => {
     if (panelTab !== 'disruptions') switchPanelTab('disruptions');
     else renderDisruptions();
@@ -1651,24 +1698,6 @@ function onClick(pt, evt) {
     }, 80);
   }, 0);
 }
-
-// Unpin on globe canvas click with no point (handled in onClick above)
-// Unpin on mouseleave only if not pinned
-document.getElementById('globeViz').addEventListener('mouseleave', () => {
-  if (!tipPinned) { tip.classList.remove('visible'); document.onmousemove = null; }
-});
-
-// Click anywhere on page outside tooltip/globe to unpin
-document.addEventListener('click', e => {
-  if (tipPinned &&
-      !tip.contains(e.target) &&
-      !document.getElementById('globeViz').contains(e.target)) {
-    unpinTip();
-    selectedId = null;
-    renderGlobe();
-    renderDisruptions();
-  }
-});
 
 // ── RENDER GLOBE ──
 function getVisible() {
@@ -1792,20 +1821,26 @@ function findDisruptionForNews(n) {
   return bestScore >= 2 ? best : null;
 }
 
-function flyToDisruption(d) {
+function flyToDisruption(d, switchToDisruptions) {
   if (!d) return;
   selectedId = d.id;
-  // Fly the globe (non-blocking)
+  // Fly the globe (non-blocking, never causes a freeze)
   if (globe) globe.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.2 }, 800);
-  // Update panel after a tick
-  setTimeout(() => {
-    if (panelTab !== 'disruptions') switchPanelTab('disruptions');
-    else renderDisruptions();
+
+  if (switchToDisruptions) {
+    // Called from news MAP badge — switch panel to disruptions and scroll
     setTimeout(() => {
-      const el = document.querySelector(`.dis-item[data-id="${d.id}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 80);
-  }, 0);
+      switchPanelTab('disruptions');
+      setTimeout(() => {
+        const el = document.querySelector(`.dis-item[data-id="${d.id}"]`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 80);
+    }, 0);
+  } else {
+    // Called from disruptions panel (selectItem) — just re-render to show highlight
+    setTimeout(() => renderDisruptions(), 0);
+  }
+
   // Pin tooltip at globe centre after fly animation completes
   setTimeout(() => {
     const gw = document.getElementById('globe-wrap');
@@ -1823,7 +1858,7 @@ function renderNews() {
     const highlightBorder = lid ? 'border-left:2px solid var(--accent2);padding-left:12px;' : '';
     // Clicking the card opens source URL; only the MAP badge flies to the marker
     const mapBadge = lid
-      ? `<span onclick="event.stopPropagation();flyToDisruption(DISRUPTIONS.find(x=>x.id===${lid}))"
+      ? `<span onclick="event.stopPropagation();flyToDisruption(DISRUPTIONS.find(x=>x.id===${lid}),true)"
            style="font-family:var(--font-mono);font-size:7px;color:var(--accent2);margin-left:6px;
                   background:rgba(34,153,238,0.1);padding:1px 5px;border:1px solid rgba(34,153,238,0.3);
                   cursor:pointer;border-radius:1px;" title="Show on map">↗ MAP</span>`
@@ -1847,7 +1882,7 @@ function renderFM() {
   </div>`;
   FM_DATA.forEach(f => {
     const linked = DISRUPTIONS.find(d => d.company && d.company.toLowerCase().includes(f.company.toLowerCase().split(' ')[0]));
-    const clickAttr = linked ? `onclick="flyToDisruption(DISRUPTIONS.find(x=>x.id===${linked ? linked.id : 'null'}))"` : '';
+    const clickAttr = linked ? `onclick="flyToDisruption(DISRUPTIONS.find(x=>x.id===${linked ? linked.id : 'null'}),true)"` : '';
     html += `<div class="dis-item" ${clickAttr} style="${linked?'cursor:pointer;':''}">
       <div class="dis-co">${f.company}${linked?'<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent2);margin-left:8px;background:rgba(34,153,238,0.1);padding:1px 5px;border:1px solid rgba(34,153,238,0.3)">MAP</span>':''}</div>
       <div class="dis-meta">
