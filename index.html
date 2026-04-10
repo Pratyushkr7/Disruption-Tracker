@@ -2141,12 +2141,35 @@ async function deleteMarkerFromAPI(dbId, editorKey) {
 }
 
 // ── EDITOR KEY (session-scoped, never persisted to disk) ──────────────────
-// Editors enter a secret key once per browser tab; it's forgotten when tab closes.
-function getEditorKey() {
+// Returns null if cancelled, 'OFFLINE' if API unreachable, or the validated key.
+async function promptAndValidateEditorKey() {
+  const key = window.prompt('Enter editor key:');
+  if (!key) return null; // user cancelled
+
+  try {
+    const r = await fetch(API_BASE + '?validate=1', {
+      headers: { 'x-editor-key': key },
+    });
+    if (r.status === 204) return key;  // ✓ only accept explicit "valid" response
+    if (r.status === 401) {
+      alert('Wrong editor key. Please try again.');
+      return null;
+    }
+    // 500 = EDITOR_KEY not configured on server; 200 = old API without validate support
+    alert('Could not verify key (server returned ' + r.status + '). Make sure EDITOR_KEY is set in Vercel and the latest api/markers.js is deployed.');
+    return null;
+  } catch (e) {
+    // Network error — do NOT trust the key; require the API to be reachable
+    alert('Could not reach server to verify key. Check your deployment.');
+    return null;
+  }
+}
+
+// Returns a valid key (checking session cache first) or null.
+async function getEditorKey() {
   if (window._editorKey) return window._editorKey;
-  const key = window.prompt('Enter editor key to modify markers:');
-  if (!key) return null;
-  window._editorKey = key;
+  const key = await promptAndValidateEditorKey();
+  if (key) window._editorKey = key;
   return key;
 }
 
@@ -2227,10 +2250,10 @@ window.addEventListener('load', function() {
   // Expose so inline onclick works
   window.amRemoveProduct = amRemoveProduct;
 
-  window.openAddMarker = function(lat, lng) {
-    // Require editor key before opening the add-marker modal
-    const key = getEditorKey();
-    if (!key) return; // user cancelled prompt
+  window.openAddMarker = async function(lat, lng) {
+    // Require a server-validated editor key before opening the add-marker modal
+    const key = await getEditorKey();
+    if (!key) return; // user cancelled or invalid key
 
     _amProducts = [];
     _amIntensity = 5;
@@ -2358,7 +2381,7 @@ window.addEventListener('load', function() {
     if (!d || !d.userAdded) return;
     if (!confirm(`Delete "${d.company}"? This cannot be undone.`)) return;
 
-    const editorKey = getEditorKey();
+    const editorKey = await getEditorKey();
     if (!editorKey) return;
 
     try {
