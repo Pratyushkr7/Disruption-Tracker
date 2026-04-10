@@ -48,6 +48,13 @@ module.exports = async function handler(req, res) {
   }
 
   try {
+    // ── GET  /api/markers?validate=1  —  key check only, no DB call ─────
+    // Used by the frontend to verify an editor key before opening the modal.
+    if (req.method === 'GET' && req.query.validate === '1') {
+      if (!checkEditorKey(req, res)) return; // returns 401 if wrong
+      return res.status(204).end();           // 204 = key is valid
+    }
+
     // ── GET  /api/markers  —  public, no auth required ────────────────────
     if (req.method === 'GET') {
       const r = await fetch(
