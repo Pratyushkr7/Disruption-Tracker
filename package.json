@@ -1,0 +1,9 @@
+{
+  "name": "disruption-tracker",
+  "version": "1.0.0",
+  "description": "Valdera Disruption Tracker — Hormuz Crisis Supply Chain Map",
+  "engines": {
+    "node": ">=18.x"
+  },
+  "private": true
+}
