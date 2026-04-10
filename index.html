@@ -196,17 +196,7 @@
   .b-fm     { background:rgba(139,0,0,0.2); color:#ff4444; border:1px solid rgba(139,0,0,0.5); }
   .b-cyan   { background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.3); }
 
-  /* Panel: News feed */
-  .news-item {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-  }
-  .news-source { font-family: var(--font-mono); font-size: 8px; color: var(--accent); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; }
-  .news-date   { font-family: var(--font-mono); font-size: 8px; color: var(--text-muted); margin-left: 6px; }
-  .news-head   { font-size: 11px; font-weight:600; color: #ddeeff; margin-top:4px; line-height:1.4; }
-  .news-body   { font-size: 9.5px; color: var(--text-dim); margin-top:4px; line-height:1.55; }
-  .news-link   { display:inline-flex; align-items:center; gap:3px; margin-top:5px; font-family:var(--font-mono); font-size:7.5px; color: var(--accent2); text-decoration:none; }
-  .news-link:hover { text-decoration:underline; }
+
 
   /* Panel: Advisory */
   .adv-block {
@@ -272,7 +262,7 @@
     position: fixed; z-index:300; pointer-events:none;
     opacity:0; transform:translateY(6px);
     transition: opacity 0.12s, transform 0.12s;
-    min-width: 255px; max-width: 315px;
+    min-width: 275px; max-width: 345px;
   }
   #tooltip.visible { opacity:1; transform:translateY(0); }
   #tooltip.pinned  { pointer-events: auto; }
@@ -291,7 +281,11 @@
   .tt-top-bar { height: 3px; background: var(--accent); }
   .tt-hd { padding: 9px 12px 8px; border-bottom: 1px solid var(--border); background: #0a1018; }
   .tt-co { font-size: 12px; font-weight:700; color: #e8f2ff; line-height:1.3; }
-  .tt-ctry { font-family:var(--font-mono); font-size:8.5px; color:var(--text-dim); margin-top:2px; }
+  .tt-location { font-family:var(--font-mono); font-size:8.5px; color:var(--accent2); margin-top:2px; }
+  .tt-prod-row { align-items:flex-start; }
+  .tt-prod-row .tt-v { white-space:normal; line-height:1.45; }
+  .tt-src a { color:var(--accent2); text-decoration:none; }
+  .tt-src a:hover { text-decoration:underline; }
   .tt-bd { padding: 9px 12px; }
   .tt-row { display:flex; align-items:baseline; gap:8px; margin-bottom:4px; font-family:var(--font-mono); font-size:9px; line-height:1.4; }
   .tt-row:last-child { margin-bottom:0; }
@@ -508,10 +502,7 @@
 
   <!-- Side panel -->
   <div id="side-panel">
-    <div id="panel-tabs">
-      <button class="ptab active" onclick="switchPanelTab('disruptions')">Disruptions</button>
-      <button class="ptab" onclick="switchPanelTab('news')">News</button>
-    </div>
+    <!-- panel-tabs hidden: single Disruptions tab -->
     <div id="panel-search-wrap">
       <input id="panel-search" type="text" placeholder="Search company, country, product…" oninput="filterPanel()"/>
     </div>
@@ -526,16 +517,18 @@
     <span class="tt-close" onclick="unpinTip();selectedId=null;renderDisruptions();" title="Close">✕</span>
     <div class="tt-hd">
       <div class="tt-co" id="tt-co">—</div>
-      <div class="tt-ctry" id="tt-ctry">—</div>
+      <div class="tt-location" id="tt-location">—</div>
     </div>
     <div class="tt-bd">
       <div class="tt-row"><span class="tt-k">Status</span><span class="tt-v" id="tt-status">—</span></div>
-      <div class="tt-row"><span class="tt-k">Since</span><span class="tt-v" id="tt-start">—</span></div>
+      <div class="tt-row"><span class="tt-k">Intensity</span><span class="tt-v" id="tt-intensity">—</span></div>
       <div class="tt-hr"></div>
-      <div class="tt-row"><span class="tt-k">Products</span><span class="tt-v" id="tt-prod">—</span></div>
+      <div class="tt-row"><span class="tt-k">Outage Start</span><span class="tt-v" id="tt-start">—</span></div>
+      <div class="tt-row"><span class="tt-k">Est. Restart</span><span class="tt-v" id="tt-restart">—</span></div>
+      <div class="tt-hr"></div>
+      <div class="tt-row tt-prod-row"><span class="tt-k">Products</span><span class="tt-v" id="tt-prod">—</span></div>
       <div class="tt-row"><span class="tt-k">Capacity</span><span class="tt-v" id="tt-cap">—</span></div>
       <div class="tt-hr"></div>
-      <div class="tt-row"><span class="tt-k">Impact</span><span class="tt-v" id="tt-imp">—</span></div>
       <div class="tt-row"><span class="tt-k">Confidence</span><span class="tt-v" id="tt-conf">—</span></div>
     </div>
     <div class="tt-src">Source: <span id="tt-src">—</span></div>
@@ -715,16 +708,6 @@ const DISRUPTIONS = [
     source:"ScanX Trade, Mar 2026"
   },
   {
-    id:26, company:"Lanxess — European Operations", country:"Germany",
-    lat:50.9375, lng:6.9603,
-    status:"Monitoring", type:"Price hike announced — counter Iran war effects",
-    start:"2026-03-19",
-    products:["Specialty chemicals","Leather chemicals","Rubber chemicals","Flavors"],
-    capacity:"European-wide price increase",
-    impact:"Medium", confidence:"Confirmed",
-    source:"Reuters, 19 Mar 2026"
-  },
-  {
     id:27, company:"LyondellBasell — European Polyolefins", country:"Netherlands",
     lat:51.9048, lng:4.4667,
     status:"Monitoring", type:"Commercial Force Majeure — rising naphtha vs fixed contracts",
@@ -743,36 +726,6 @@ const DISRUPTIONS = [
     capacity:"Multiple giant complexes reducing rates",
     impact:"High", confidence:"Likely",
     source:"Chemnet, Mar 2026"
-  },
-  {
-    id:29, company:"Dow — Belgian Polyols Plant", country:"Belgium",
-    lat:51.2194, lng:4.4025,
-    status:"Shutdown", type:"Planned closure accelerated — supply disruption context",
-    start:"2026-03-01",
-    products:["Polyols","Polyurethane intermediates"],
-    capacity:"Closure by March 2026",
-    impact:"Medium", confidence:"Confirmed",
-    source:"Argus Media, Mar 2026"
-  },
-  {
-    id:40, company:"Chandra Asri", country:"Indonesia",
-    lat:-6.015, lng:106.04,
-    status:"Shutdown", type:"Force Majeure",
-    start:"",
-    products:["All petrochemicals"],
-    capacity:"860 KTA ethylene (Cilegon cracker); also majority owner of Ast...",
-    impact:"High", confidence:"Likely",
-    source:"https://cen.acs.org/business/petrochemicals/Strait-Hormuz-closure-hits-Asias/104/web/2026/03"
-  },
-  {
-    id:41, company:"Yeochun NCC (YNCC)", country:"South Korea",
-    lat:34.7604, lng:127.6622,
-    status:"Reduced", type:"Force Majeure",
-    start:"",
-    products:["Ethylene","propylene","BTX","BD","SM"],
-    capacity:"2.285M t/y ethylene (Plants 1&2 operating; Plant 3 already idled)",
-    impact:"High", confidence:"Likely",
-    source:"https://en.sedaily.com/finance/2026/03/06/yeochun-ncc-declares-force-majeure-amid-middle-east-supply"
   },
   {
     id:42, company:"PCS (Petrochemical Corp of Singapore)", country:"Singapore",
@@ -865,16 +818,6 @@ const DISRUPTIONS = [
     source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/are-feedstock-shortages-and-war-risks-pushing-petrochemical-41387"
   },
   {
-    id:51, company:"Mitsui Chemicals", country:"Japan",
-    lat:34.53, lng:135.43,
-    status:"Reduced", type:"Production Cut",
-    start:"",
-    products:["Ethylene"],
-    capacity:"Osaka + Ichihara crackers (combined ~1M t/y)",
-    impact:"Medium", confidence:"Likely",
-    source:"https://hydrocarbonprocessing.com/news/2026/03/mitsui-chemicals-cuts-output-with-other-japanese-companies-amid-iran-crisis/"
-  },
-  {
     id:52, company:"Mitsubishi Chemical — Kashima (Ibaraki)", country:"Japan",
     lat:35.9500, lng:140.6300,
     status:"Shutdown", type:"Production Cut",
@@ -935,16 +878,6 @@ const DISRUPTIONS = [
     source:"https://en.sedaily.com/finance/2026/03/27/lotte-chemical-shuts-down-yeosu-plant-amid-naphtha-crisis"
   },
   {
-    id:59, company:"Formosa Plastics (expanded)", country:"Taiwan",
-    lat:23.79, lng:120.21,
-    status:"Shutdown", type:"Force Majeure",
-    start:"",
-    products:["Multiple ethylene downstream"],
-    capacity:"Multiple downstream lines",
-    impact:"Medium", confidence:"Likely",
-    source:"https://markets.financialcontent.com/stocks/article/marketminute-2026-3-30-naphtha-surges-to-1000-the-petrochemical-crisis-of-2026-explained"
-  },
-  {
     id:60, company:"Shin-Etsu Chemical", country:"Japan",
     lat:35.68, lng:139.76,
     status:"Reduced", type:"Price Increase",
@@ -955,26 +888,6 @@ const DISRUPTIONS = [
     source:"https://www.bryantimes.com/news/japan-s-korea-petrochemical-industry-slows-output-on-iran-war/article_73f55c02-78a1-5a10-bed3-6cf944f1a07a.html"
   },
   {
-    id:61, company:"Maruzen Petrochemical", country:"Japan",
-    lat:35.53, lng:140.03,
-    status:"Monitoring", type:"Tender Cancellation",
-    start:"",
-    products:["Naphtha","ethylene"],
-    capacity:"Japanese cracker operator",
-    impact:"Low", confidence:"Likely",
-    source:"https://energynews.oedigital.com/energy-markets/2026/03/04/asian-petchem-makers-face-naphtha-disruption-as-iran-conflict-widens"
-  },
-  {
-    id:62, company:"LyondellBasell", country:"Netherlands",
-    lat:51.9225, lng:4.4792,
-    status:"Shutdown", type:"Force Majeure",
-    start:"",
-    products:["PE","PP","polyolefins"],
-    capacity:"Major European polyolefin supplier; also Carrington UK PP: 210...",
-    impact:"Medium", confidence:"Likely",
-    source:"https://www.chemorbis.com/en/plastics-news/LyondellBasell-declares-force-majeure-on-European-polyolefins-supply-amid-Iran-conflict/2026/03/11/963876"
-  },
-  {
     id:63, company:"Huntsman Corp", country:"Belgium",
     lat:50.8503, lng:4.3517,
     status:"Reduced", type:"Price Increase",
@@ -982,26 +895,6 @@ const DISRUPTIONS = [
     products:["MDI","building products"],
     capacity:"European MDI + building solutions portfolio",
     impact:"Medium", confidence:"Likely",
-    source:"https://www.bloominglobal.com/media/detail/europe-chemical-prices-surge-as-energy-crisis-deepens"
-  },
-  {
-    id:64, company:"Covestro", country:"China",
-    lat:31.2304, lng:121.4737,
-    status:"Reduced", type:"Price Increase",
-    start:"",
-    products:["PU systems"],
-    capacity:"Shanghai PU systems unit",
-    impact:"Low", confidence:"Likely",
-    source:"https://www.bloominglobal.com/media/detail/europe-chemical-prices-surge-as-energy-crisis-deepens"
-  },
-  {
-    id:65, company:"Evonik", country:"Singapore",
-    lat:1.29, lng:103.85,
-    status:"Reduced", type:"Price Increase",
-    start:"",
-    products:["Fumed silica","metal oxides","silanes"],
-    capacity:"APAC silica/silane portfolio",
-    impact:"Low", confidence:"Likely",
     source:"https://www.bloominglobal.com/media/detail/europe-chemical-prices-surge-as-energy-crisis-deepens"
   },
   {
@@ -1015,16 +908,6 @@ const DISRUPTIONS = [
     source:"https://www.bloomberg.com/news/articles/2026-03-12/slovakia-s-top-fertilizer-plant-cuts-ammonia-output-as-gas-soars"
   },
   {
-    id:67, company:"European ammonia sector (broad)", country:"Europe",
-    lat:50.85, lng:4.35,
-    status:"Reduced", type:"Production Curtailment Risk",
-    start:"",
-    products:["Ammonia"],
-    capacity:"EU total: ~20M t/y ammonia capacity",
-    impact:"Medium", confidence:"Likely",
-    source:""
-  },
-  {
     id:68, company:"QAFCO (Qatar)", country:"Qatar",
     lat:24.99, lng:51.55,
     status:"Shutdown", type:"Shutdown",
@@ -1035,7 +918,7 @@ const DISRUPTIONS = [
     source:"https://www.aa.com.tr/en/world/strait-of-hormuz-crisis-threatens-world-fertilizer-supply-chain/3875786"
   },
   {
-    id:69, company:"Egypt (MOPCO, Abu Qir)", country:"Egypt",
+    id:69, company:"MOPCO / Abu Qir Fertilizers", country:"Egypt",
     lat:31.42, lng:31.81,
     status:"Reduced", type:"Capacity Cut (~50%)",
     start:"",
@@ -1045,7 +928,7 @@ const DISRUPTIONS = [
     source:"https://markets.financialcontent.com/stocks/article/marketminute-2026-3-30-fertilizer-supply-crisis-global-food-security-threatened-as-prices-soar-amid-2026-conflict-related-disruptions"
   },
   {
-    id:70, company:"Russia (Acron Dorogobuzh + others)", country:"Russia",
+    id:70, company:"Acron Dorogobuzh", country:"Russia",
     lat:54.947, lng:33.368,
     status:"Shutdown", type:"Export Restriction",
     start:"",
@@ -1053,46 +936,6 @@ const DISRUPTIONS = [
     capacity:"Russian AN output down est. 11%; exports suspended 1+ month",
     impact:"Medium", confidence:"Likely",
     source:"https://markets.financialcontent.com/stocks/article/marketminute-2026-3-30-fertilizer-supply-crisis-global-food-security-threatened-as-prices-soar-amid-2026-conflict-related-disruptions"
-  },
-  {
-    id:72, company:"Pakistan/Bangladesh producers", country:"Pakistan/Bangladesh",
-    lat:32.58, lng:71.53,
-    status:"Shutdown", type:"Production Halt",
-    start:"",
-    products:["Fertilizer (various)"],
-    capacity:"Multiple plants (Agritech Ltd etc.)",
-    impact:"Medium", confidence:"Likely",
-    source:"https://www.aa.com.tr/en/world/strait-of-hormuz-crisis-threatens-world-fertilizer-supply-chain/3875786"
-  },
-  {
-    id:73, company:"India (gas allocation)", country:"India",
-    lat:28.6139, lng:77.209,
-    status:"Monitoring", type:"Production Cut",
-    start:"",
-    products:["Urea"],
-    capacity:"~800K t/month lost from 2.6M t/month total",
-    impact:"Medium", confidence:"Likely",
-    source:"https://www.aa.com.tr/en/world/strait-of-hormuz-crisis-threatens-world-fertilizer-supply-chain/3875786"
-  },
-  {
-    id:74, company:"Iran methanol producers", country:"Iran",
-    lat:27.48, lng:52.61,
-    status:"Reduced", type:"Export Disruption",
-    start:"",
-    products:["Methanol"],
-    capacity:"~17.3M t/y capacity; 2nd largest global producer",
-    impact:"High", confidence:"Likely",
-    source:"https://www.scmp.com/economy/china-economy/article/3345276/iran-war-could-significantly-disrupt-chinas-methanol-imports-analysts"
-  },
-  {
-    id:75, company:"China MTO plants", country:"China",
-    lat:38.47, lng:106.27,
-    status:"Monitoring", type:"Feedstock Risk",
-    start:"",
-    products:["Methanol-to-olefins"],
-    capacity:"Multiple MTO plants relying on imported methanol",
-    impact:"Medium", confidence:"Likely",
-    source:""
   },
   {
     id:76, company:"Westlake Corp", country:"USA",
@@ -1103,26 +946,6 @@ const DISRUPTIONS = [
     capacity:"PVC: ~1B lb/y; VCM: ~910M lb/y; Cl2: ~825M lb/y; NaOH: ~910M l...",
     impact:"Medium", confidence:"Likely",
     source:"https://www.plasticstoday.com/business/westlake-announces-plant-closures-amid-profitability-push"
-  },
-  {
-    id:77, company:"VanDeMark Chemical", country:"USA",
-    lat:43.17, lng:-78.69,
-    status:"Shutdown", type:"Plant Closure",
-    start:"",
-    products:["Phosgene derivatives"],
-    capacity:"Lockport NY facility (69 jobs)",
-    impact:"Low", confidence:"Likely",
-    source:"https://cen.acs.org/business/specialty-chemicals/Editorial-Economic-headwinds-buffet-industrial/104/web/2026/03"
-  },
-  {
-    id:78, company:"PMC Biogenix", country:"USA",
-    lat:35.195, lng:-90.01,
-    status:"Shutdown", type:"Plant Closure",
-    start:"",
-    products:["Oleochemicals"],
-    capacity:"Memphis TN facility (172 jobs)",
-    impact:"Low", confidence:"Likely",
-    source:"https://www.actionnews5.com/2026/03/04/memphis-chemical-plant-closing-will-impact-172-workers/"
   },
   {
     id:79, company:"LyondellBasell - Bayport Choate", country:"USA",
@@ -1175,36 +998,6 @@ const DISRUPTIONS = [
     source:"Reuters, 11 Mar 2026"
   },
   {
-    id:31, company:"Saudi Aramco - Ras Tanura", country:"Saudi Arabia",
-    lat:26.6403, lng:50.1538,
-    status:"Shutdown", type:"Drone Strike",
-    start:"",
-    products:["Crude","refined products","LPG"],
-    capacity:"550,000 bpd refinery + export terminal",
-    impact:"High", confidence:"Likely",
-    source:"https://www.bloomberg.com/news/articles/2026-03-02/saudi-arabia-s-ras-tanura-refinery-shuts-down-after-drone-attack"
-  },
-  {
-    id:33, company:"ADNOC - Ruwais", country:"UAE",
-    lat:24.1114, lng:52.73,
-    status:"Shutdown", type:"Drone Strike",
-    start:"",
-    products:["Crude","chemicals","fertilizer","industrial gas"],
-    capacity:"922,000 bpd complex (Ref 1: 400K, Ref 2: 417K bpd)",
-    impact:"High", confidence:"Likely",
-    source:"https://www.idnfinancials.com/news/62350/adnoc-halts-oil-facility-after-iranian-missile-strike"
-  },
-  {
-    id:35, company:"KPC - Mina Al-Ahmadi", country:"Kuwait",
-    lat:29.0772, lng:48.1225,
-    status:"Shutdown", type:"Drone Strike",
-    start:"",
-    products:["Crude","refined products"],
-    capacity:"730,000 bpd refinery",
-    impact:"High", confidence:"Likely",
-    source:"https://www.aljazeera.com/news/2026/3/20/kuwait-oil-refinery-hit-again-as-iran-targets-gulf-energy-infrastructure"
-  },
-  {
     id:36, company:"KPC - Mina Abdullah", country:"Kuwait",
     lat:29.04, lng:48.15,
     status:"Monitoring", type:"Drone Strike",
@@ -1214,1352 +1007,7 @@ const DISRUPTIONS = [
     impact:"Medium", confidence:"Likely",
     source:"https://www.cnbc.com/2026/03/20/oil-wti-brent-us-weighs-releasing-sanctioned-iranian-crude.html"
   },
-  {
-    id:37, company:"BAPCO", country:"Bahrain",
-    lat:26.16, lng:50.61,
-    status:"Reduced", type:"Drone Strike",
-    start:"",
-    products:["Crude","refined products"],
-    capacity:"267,000 bpd refinery",
-    impact:"High", confidence:"Likely",
-    source:"https://cms.law/en/aut/legal-updates/force-majeure-at-oil-refineries-in-singapore-south-korea-and-china"
-  },
-  {
-    id:81,
-    company:"Crude Oil",
-    country:"Gulf Region / Global",
-    lat:27.0,
-    lng:50.1842,
-    status:"Shutdown",
-    type:"Largest oil supply disruption in history - 14 mb/d missing from global market; Brent surged past $120/bbl",
-    start:"2026-04-03",
-    products:["Crude Oil"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.cnbc.com/2026/04/01/oil-price-iea-fatih-birol-brent-iran-strait-hormuz.html"
-  },
-  {
-    id:82,
-    company:"Naphtha",
-    country:"Gulf Region / Global",
-    lat:27.5114,
-    lng:48.9677,
-    status:"Shutdown",
-    type:"ME deliveries to Asia fell ~85% in March; prices doubled to $1,300/t; South Korea banned naphtha exports",
-    start:"2026-04-03",
-    products:["Naphtha"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.agbi.com/petrochemicals/2026/03/premiums-surge-as-iran-war-disrupts-asias-naphtha-supply/"
-  },
-  {
-    id:83,
-    company:"Ethylene (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:26.0264,
-    lng:49.7544,
-    status:"Shutdown",
-    type:"31+ FMs declared globally; NE Asian cracker utilization fell from 80% to 60%; Sadara 1.5M t/yr suspended",
-    start:"2026-04-03",
-    products:["Ethylene (naphtha route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2808400-saudi-sadara-petchem-site-shuts-down-on-us-iran-war"
-  },
-  {
-    id:84,
-    company:"Polyethylene - HDPE/LDPE/LLDPE",
-    country:"Gulf Region / Global",
-    lat:27.9177,
-    lng:50.51,
-    status:"Shutdown",
-    type:"~50% of global PE capacity offline or constrained; prices surged 50-80% in Asia; US HDPE +36.57%",
-    start:"2026-04-03",
-    products:["Polyethylene - HDPE/LDPE/LLDPE"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://syntexamerica.com/blog/hormuz-crisis-week-3-pe-shortage-price-spiral-2026"
-  },
-  {
-    id:85,
-    company:"Ethylene oxide",
-    country:"Gulf Region / Global",
-    lat:26.7716,
-    lng:48.0719,
-    status:"Shutdown",
-    type:"SABIC declared FM on EG/MEG (March 27); 8M t/yr of ME EG exports lost; Iran offline; DEG prices +17%",
-    start:"2026-04-08",
-    products:["Ethylene oxide"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemorbis.com/en/plastics-news/SABIC-declares-force-majeure-on-EG-amid-Hormuz-disruption/2026/03/27/965992"
-  },
-  {
-    id:86,
-    company:"Ethylene glycol (MEG)",
-    country:"Gulf Region / Global",
-    lat:26.2219,
-    lng:51.1449,
-    status:"Shutdown",
-    type:"SABIC declared FM on EG/MEG (March 27); ME cargoes blocked by Hormuz; prices at near 3-year highs",
-    start:"2026-04-08",
-    products:["Ethylene glycol (MEG)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemorbis.com/en/plastics-news/SABIC-declares-force-majeure-on-EG-amid-Hormuz-disruption/2026/03/27/965992"
-  },
-  {
-    id:87,
-    company:"Ethylene dichloride",
-    country:"Gulf Region / Global",
-    lat:28.5219,
-    lng:49.15,
-    status:"Reduced",
-    type:"European producers declare FM on PVC; US Gulf Coast PVC producers less affected; India PVC +78%",
-    start:"2026-04-03",
-    products:["Ethylene dichloride"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.plasteurope.com/news/PETROCHEMICAL_MARKETS_t259818/"
-  },
-  {
-    id:88,
-    company:"Ethylbenzene",
-    country:"Gulf Region / Global",
-    lat:25.4977,
-    lng:48.6964,
-    status:"Shutdown",
-    type:"SABIC FM on SM (March 26); Petrokemya FM on Jubail SM plants; TKSC Kuwait 450K t/yr shut; styrene $1,800/mt Europe",
-    start:"2026-04-08",
-    products:["Ethylbenzene"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemorbis.com/en/plastics-news/SABIC-declares-FM-on-methanol-and-styrene-monomer-supply-amid-Hormuz-disruption/2026/03/26/965790"
-  },
-  {
-    id:89,
-    company:"Styrene monomer (SM)",
-    country:"Gulf Region / Global",
-    lat:27.6182,
-    lng:51.7189,
-    status:"Shutdown",
-    type:"SABIC FM on SM (March 26); Petrokemya FM on Jubail SM; TKSC Kuwait 450K t/yr shut; $1,800/mt Europe",
-    start:"2026-04-08",
-    products:["Styrene monomer (SM)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemorbis.com/en/plastics-news/SABIC-declares-FM-on-methanol-and-styrene-monomer-supply-amid-Hormuz-disruption/2026/03/26/965790"
-  },
-  {
-    id:90,
-    company:"Vinyl acetate monomer (VAM)",
-    country:"Gulf Region / Global",
-    lat:27.7269,
-    lng:47.4976,
-    status:"Monitoring",
-    type:"No VAM-specific FM but TPC Singapore EVA unit offline; ethylene and methanol costs surging; US producers insulated",
-    start:"2026-04-03",
-    products:["Vinyl acetate monomer (VAM)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2798284-singapore-s-tpc-declares-fm-on-upstream-supply-woes"
-  },
-  {
-    id:91,
-    company:"Linear alpha olefins (LAO)",
-    country:"Gulf Region / Global",
-    lat:25.1859,
-    lng:50.6876,
-    status:"Reduced",
-    type:"Q-Chem II 345K t/yr Qatar NAO plant offline; US/SA producers partially compensating",
-    start:"2026-04-03",
-    products:["Linear alpha olefins (LAO)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
-  },
-  {
-    id:92,
-    company:"Ethanolamines (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:29.0001,
-    lng:50.4168,
-    status:"Reduced",
-    type:"SABIC declared FM on ethanolamines (late March); Sadara shut ethanolamine production entirely March 31",
-    start:"2026-04-08",
-    products:["Ethanolamines (naphtha route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.icis.com/explore/resources/news/2026/03/30/11193220/insight-saudi-sabic-force-majeure-aggravates-global-chemicals-shortage"
-  },
-  {
-    id:93,
-    company:"Propylene (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:25.9042,
-    lng:47.339,
-    status:"Shutdown",
-    type:"Both FCC and steam cracker propylene sources severely curtailed; India diverted C3 to LPG; Sadara 400K t/yr offline",
-    start:"2026-04-03",
-    products:["Propylene (naphtha route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/petrochemicals/Hormuz-Strait-pinch-worsens-Asian/104/web/2026/03"
-  },
-  {
-    id:94,
-    company:"Polypropylene (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:26.5123,
-    lng:52.3611,
-    status:"Shutdown",
-    type:"ME PP exports shut down; TPC Singapore 625K t/yr offline; prices up 30-40%+; Africa +39%; India polybags +80%",
-    start:"2026-04-03",
-    products:["Polypropylene (naphtha route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2798284-singapore-s-tpc-declares-fm-on-upstream-supply-woes"
-  },
-  {
-    id:95,
-    company:"Acrylonitrile (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:28.9255,
-    lng:47.9955,
-    status:"Reduced",
-    type:"SABIC/SHROUQ Jubail ~200K t/yr offline; Asian propylene feedstock shortages; NA production insulated",
-    start:"2026-04-03",
-    products:["Acrylonitrile (naphtha route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
-  },
-  {
-    id:96,
-    company:"Propylene oxide (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:24.5866,
-    lng:49.2678,
-    status:"Shutdown",
-    type:"LyondellBasell Bayport fire + Sadara 330K t/yr offline + INEOS EU PO permanently closed",
-    start:"2026-04-03",
-    products:["Propylene oxide (naphtha route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2808400-saudi-sadara-petchem-site-shuts-down-on-us-iran-war"
-  },
-  {
-    id:97,
-    company:"Cumene (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:28.6181,
-    lng:51.9965,
-    status:"Reduced",
-    type:"SABIC Jubail phenol/acetone disrupted; Formosa Taiwan FM; Asian benzene/propylene shortages compound",
-    start:"2026-04-03",
-    products:["Cumene (naphtha route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/phenol-and-acetone-supply-in-asia-low-amid-force-majeure-by-major-producer-7679"
-  },
-  {
-    id:98,
-    company:"Acrylic acid (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:27.1068,
-    lng:46.4923,
-    status:"Monitoring",
-    type:"No specific Western producer FM; Asian producers face propylene feedstock shortages; NA relatively insulated",
-    start:"2026-04-03",
-    products:["Acrylic acid (naphtha route)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
-  },
-  {
-    id:99,
-    company:"Oxo alcohols (naphtha route)",
-    country:"Gulf Region / Global",
-    lat:25.1246,
-    lng:51.9533,
-    status:"Monitoring",
-    type:"SABIC Jubail oxo alcohols offline; LG Chem flagged alcohol shortages for plasticizers; NA insulated",
-    start:"2026-04-03",
-    products:["Oxo alcohols (naphtha route)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
-  },
-  {
-    id:100,
-    company:"C4 stream",
-    country:"Gulf Region / Global",
-    lat:29.7266,
-    lng:49.4959,
-    status:"Shutdown",
-    type:"India diverted all C3/C4 streams to LPG (March 9); Asian cracker cuts reduce C4 output ~25%",
-    start:"2026-04-03",
-    products:["C4 stream"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.business-standard.com/economy/news/govt-permits-c3-c4-allocation-pharma-chemicals-food-sectors-126040201279_1.html"
-  },
-  {
-    id:101,
-    company:"Butadiene (C4 stream)",
-    country:"Gulf Region / Global",
-    lat:24.8512,
-    lng:47.4584,
-    status:"Reduced",
-    type:"CSPC China declared FM on butadiene; OMV Germany and Orlen Poland also under FM; cracker cuts reduce output",
-    start:"2026-04-03",
-    products:["Butadiene (C4 stream)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/petrochemicals/Iran-war-hits-chemical-sector/104/web/2026/03"
-  },
-  {
-    id:102,
-    company:"1-butene",
-    country:"Gulf Region / Global",
-    lat:27.3822,
-    lng:53.1217,
-    status:"Reduced",
-    type:"India's C4 diversion order eliminates domestic 1-butene for petchem; global cracker cuts reduce co-product supply",
-    start:"2026-04-03",
-    products:["1-butene"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.business-standard.com/economy/news/govt-permits-c3-c4-allocation-pharma-chemicals-food-sectors-126040201279_1.html"
-  },
-  {
-    id:103,
-    company:"Isobutylene",
-    country:"Gulf Region / Global",
-    lat:28.6746,
-    lng:46.7084,
-    status:"Reduced",
-    type:"OMV Burghausen high-purity isobutene unit affected by FM; India C4 diversion constrains MTBE/butyl rubber feed",
-    start:"2026-04-03",
-    products:["Isobutylene"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.business-standard.com/economy/news/govt-permits-c3-c4-allocation-pharma-chemicals-food-sectors-126040201279_1.html"
-  },
-  {
-    id:104,
-    company:"Pygas / Reformate",
-    country:"Gulf Region / Global",
-    lat:24.0766,
-    lng:50.4538,
-    status:"Reduced",
-    type:"Asian pygas output down ~25% from cracker rate cuts; Middle East reformate blocked by Hormuz closure",
-    start:"2026-04-03",
-    products:["Pygas / Reformate"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/are-feedstock-shortages-and-war-risks-pushing-petrochemical-41387"
-  },
-  {
-    id:105,
-    company:"Benzene",
-    country:"Gulf Region / Global",
-    lat:29.6546,
-    lng:51.5092,
-    status:"Shutdown",
-    type:"SABIC FM; Sinopec raised domestic price 3 times; Asian benzene +20%; FOB Korea surpassed $1,100/mt",
-    start:"2026-04-03",
-    products:["Benzene"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.icis.com/explore/resources/news/2026/03/30/11193220/insight-saudi-sabic-force-majeure-aggravates-global-chemicals-shortage"
-  },
-  {
-    id:106,
-    company:"Toluene",
-    country:"Gulf Region / Global",
-    lat:26.0513,
-    lng:46.0155,
-    status:"Reduced",
-    type:"Prices surged ~50% since conflict; dual demand pull from gasoline blending and chemical use",
-    start:"2026-04-03",
-    products:["Toluene"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/energy-and-commodity-podcasts/middle-east-conflict-btx-aromatics-markets-naphtha-supply"
-  },
-  {
-    id:107,
-    company:"Xylenes (PX/MX)",
-    country:"Gulf Region / Global",
-    lat:25.6654,
-    lng:53.1805,
-    status:"Reduced",
-    type:"5.89M t/yr Middle East PX capacity at risk; PX prices up 15-40%; Saudi supplies 56% of US PX imports",
-    start:"2026-04-03",
-    products:["Xylenes (PX/MX)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2794585-kuwait-port-closure-could-limit-petchem-trade-flows"
-  },
-  {
-    id:108,
-    company:"VGO (Vacuum Gas Oil)",
-    country:"Gulf Region / Global",
-    lat:29.9902,
-    lng:48.1205,
-    status:"Shutdown",
-    type:"3+ mb/d of Middle East refining offline; Gulf VGO production collapsed; Asian refiners cutting runs sharply",
-    start:"2026-04-03",
-    products:["VGO (Vacuum Gas Oil)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iea.org/reports/oil-market-report-march-2026"
-  },
-  {
-    id:109,
-    company:"FCC propylene",
-    country:"Gulf Region / Global",
-    lat:23.8949,
-    lng:48.285,
-    status:"Shutdown",
-    type:"ME FCC units offline with refinery shutdowns; refinery-grade propylene supply sharply curtailed",
-    start:"2026-04-03",
-    products:["FCC propylene"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/petrochemicals/Hormuz-Strait-pinch-worsens-Asian/104/web/2026/03"
-  },
-  {
-    id:110,
-    company:"Polypropylene (FCC route)",
-    country:"Gulf Region / Global",
-    lat:28.5619,
-    lng:53.2822,
-    status:"Shutdown",
-    type:"ME PP exports shut down; TPC Singapore 625K t/yr offline; prices up 30-40%+; Africa +39%",
-    start:"2026-04-03",
-    products:["Polypropylene (FCC route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2798284-singapore-s-tpc-declares-fm-on-upstream-supply-woes"
-  },
-  {
-    id:111,
-    company:"Acrylonitrile (FCC route)",
-    country:"Gulf Region / Global",
-    lat:27.8701,
-    lng:45.6155,
-    status:"Reduced",
-    type:"SABIC/SHROUQ Jubail ~200K t/yr offline; Asian propylene feedstock shortages; NA production insulated",
-    start:"2026-04-03",
-    products:["Acrylonitrile (FCC route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
-  },
-  {
-    id:112,
-    company:"Propylene oxide (FCC route)",
-    country:"Gulf Region / Global",
-    lat:24.082,
-    lng:51.9432,
-    status:"Shutdown",
-    type:"LyondellBasell Bayport fire + Sadara 330K t/yr offline + INEOS EU PO permanently closed",
-    start:"2026-04-03",
-    products:["Propylene oxide (FCC route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2733179-ineos-to-close-european-po-pg-production"
-  },
-  {
-    id:113,
-    company:"Cumene (FCC route)",
-    country:"Gulf Region / Global",
-    lat:30.4729,
-    lng:50.3795,
-    status:"Reduced",
-    type:"SABIC Jubail phenol/acetone disrupted; Formosa Taiwan FM; Asian benzene/propylene shortages compound",
-    start:"2026-04-03",
-    products:["Cumene (FCC route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/phenol-and-acetone-supply-in-asia-low-amid-force-majeure-by-major-producer-7679"
-  },
-  {
-    id:114,
-    company:"Acrylic acid (FCC route)",
-    country:"Gulf Region / Global",
-    lat:24.8094,
-    lng:46.1929,
-    status:"Monitoring",
-    type:"No specific Western producer FM; Asian producers face propylene feedstock shortages; NA relatively insulated",
-    start:"2026-04-03",
-    products:["Acrylic acid (FCC route)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
-  },
-  {
-    id:115,
-    company:"Oxo alcohols (FCC route)",
-    country:"Gulf Region / Global",
-    lat:26.7002,
-    lng:54.0723,
-    status:"Monitoring",
-    type:"SABIC Jubail oxo alcohols offline; LG Chem flagged alcohol shortages for plasticizers; NA insulated",
-    start:"2026-04-03",
-    products:["Oxo alcohols (FCC route)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
-  },
-  {
-    id:116,
-    company:"FCC C4",
-    country:"Gulf Region / Global",
-    lat:29.7035,
-    lng:46.5933,
-    status:"Shutdown",
-    type:"ME FCC units offline with refinery shutdowns; FCC-derived C4 streams severely reduced",
-    start:"2026-04-03",
-    products:["FCC C4"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/petrochemicals/Hormuz-Strait-pinch-worsens-Asian/104/web/2026/03"
-  },
-  {
-    id:117,
-    company:"Butadiene (FCC C4)",
-    country:"Gulf Region / Global",
-    lat:23.2656,
-    lng:49.6723,
-    status:"Reduced",
-    type:"CSPC China declared FM on butadiene; OMV Germany and Orlen Poland also under FM",
-    start:"2026-04-03",
-    products:["Butadiene (FCC C4)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/petrochemicals/Iran-war-hits-chemical-sector/104/web/2026/03"
-  },
-  {
-    id:118,
-    company:"1-butene (FCC C4)",
-    country:"Gulf Region / Global",
-    lat:29.8035,
-    lng:52.7584,
-    status:"Reduced",
-    type:"India's C4 diversion order eliminates domestic 1-butene for petchem; global cracker cuts reduce supply",
-    start:"2026-04-03",
-    products:["1-butene (FCC C4)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.business-standard.com/economy/news/govt-permits-c3-c4-allocation-pharma-chemicals-food-sectors-126040201279_1.html"
-  },
-  {
-    id:119,
-    company:"Isobutylene (FCC C4)",
-    country:"Gulf Region / Global",
-    lat:26.6461,
-    lng:44.9824,
-    status:"Reduced",
-    type:"OMV Burghausen high-purity isobutene unit affected by FM; India C4 diversion constrains MTBE/butyl rubber feed",
-    start:"2026-04-03",
-    products:["Isobutylene (FCC C4)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.business-standard.com/economy/news/govt-permits-c3-c4-allocation-pharma-chemicals-food-sectors-126040201279_1.html"
-  },
-  {
-    id:120,
-    company:"Lube distillates",
-    country:"Gulf Region / Global",
-    lat:24.6514,
-    lng:53.4322,
-    status:"Shutdown",
-    type:"ME vacuum distillation units offline; feedstock for base oil production collapsed regionally",
-    start:"2026-04-03",
-    products:["Lube distillates"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iea.org/reports/oil-market-report-march-2026"
-  },
-  {
-    id:121,
-    company:"Base oils",
-    country:"Gulf Region / Global",
-    lat:30.8702,
-    lng:48.7895,
-    status:"Shutdown",
-    type:"~20% of world Group III capacity knocked out; Shell Pearl GTL needs 1+ year repair; API emergency licensing",
-    start:"2026-04-03",
-    products:["Base oils"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://ilma.org/ilma-seeks-immediate-relief-amid-group-iii-base-oil-supply-disruptions/"
-  },
-  {
-    id:122,
-    company:"Finished lubricants",
-    country:"Gulf Region / Global",
-    lat:23.6298,
-    lng:47.0579,
-    status:"Shutdown",
-    type:"Group III shortages, additive tightness, and longer qualification cycles squeezing finished lubricant supply globally",
-    start:"2026-04-03",
-    products:["Finished lubricants"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://ilma.org/api-grants-ilmas-request-for-emergency-provisional-licensing/"
-  },
-  {
-    id:123,
-    company:"Waxy fractions",
-    country:"Gulf Region / Global",
-    lat:28.0651,
-    lng:54.4,
-    status:"Reduced",
-    type:"Iran (major exporter) in conflict; all Gulf production halted; Asian refinery cuts reduce output",
-    start:"2026-04-03",
-    products:["Waxy fractions"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iea.org/reports/oil-market-report-march-2026"
-  },
-  {
-    id:124,
-    company:"Paraffin wax",
-    country:"Gulf Region / Global",
-    lat:28.8614,
-    lng:45.2169,
-    status:"Reduced",
-    type:"Iranian exports (top-5 global exporter) halted; paraffin wax balances tightening across Asia and India",
-    start:"2026-04-03",
-    products:["Paraffin wax"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/geopolitical-tensions-and-chinese-supply-push-us-paraffin-wax-prices-41339"
-  },
-  {
-    id:125,
-    company:"Fully refined paraffin wax",
-    country:"Gulf Region / Global",
-    lat:23.1338,
-    lng:51.4019,
-    status:"Monitoring",
-    type:"Candle, packaging, and board markets most exposed as Gulf and Iranian export supply disappears",
-    start:"2026-04-03",
-    products:["Fully refined paraffin wax"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/geopolitical-tensions-and-chinese-supply-push-us-paraffin-wax-prices-41339"
-  },
-  {
-    id:126,
-    company:"Semi-refined paraffin wax",
-    country:"Gulf Region / Global",
-    lat:30.8617,
-    lng:51.5714,
-    status:"Monitoring",
-    type:"Industrial and match-grade semi-refined wax availability tightening on lost Iranian barrels",
-    start:"2026-04-03",
-    products:["Semi-refined paraffin wax"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/geopolitical-tensions-and-chinese-supply-push-us-paraffin-wax-prices-41339"
-  },
-  {
-    id:127,
-    company:"Slack wax",
-    country:"Gulf Region / Global",
-    lat:25.1949,
-    lng:44.9946,
-    status:"Monitoring",
-    type:"Refinery run cuts and Gulf outages are tightening slack wax availability for downstream processors",
-    start:"2026-04-03",
-    products:["Slack wax"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/geopolitical-tensions-and-chinese-supply-push-us-paraffin-wax-prices-41339"
-  },
-  {
-    id:128,
-    company:"Microcrystalline wax",
-    country:"Gulf Region / Global",
-    lat:25.7449,
-    lng:54.6257,
-    status:"Reduced",
-    type:"Heavier wax streams from Gulf residue processing disrupted; specialty wax markets face tighter supply",
-    start:"2026-04-03",
-    products:["Microcrystalline wax"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/geopolitical-tensions-and-chinese-supply-push-us-paraffin-wax-prices-41339"
-  },
-  {
-    id:129,
-    company:"Residue",
-    country:"Gulf Region / Global",
-    lat:30.7139,
-    lng:46.9898,
-    status:"Shutdown",
-    type:"10 mb/d ME crude offline + 3+ mb/d refining offline; vacuum residue and HSFO unavailable from region",
-    start:"2026-04-03",
-    products:["Residue"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iea.org/reports/oil-market-report-march-2026"
-  },
-  {
-    id:130,
-    company:"Bitumen",
-    country:"Gulf Region / Global",
-    lat:22.7481,
-    lng:48.534,
-    status:"Shutdown",
-    type:"ME exports halted; Australian suppliers invoking FM; Valero Benicia closure removes 35% of CA asphalt; prices +50%",
-    start:"2026-04-03",
-    products:["Bitumen"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://councilmagazine.com.au/bitumen-supply-disruption-raises-concerns-for-councils"
-  },
-  {
-    id:131,
-    company:"Asphalt",
-    country:"Gulf Region / Global",
-    lat:29.5438,
-    lng:54.0268,
-    status:"Shutdown",
-    type:"ME exports halted; Australia FM; California -35% capacity; global prices surging; road projects stalled",
-    start:"2026-04-03",
-    products:["Asphalt"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.forconstructionpros.com/asphalt/production/plants/article/22956320/forticon-how-californias-refinery-closures-hit-asphalt-contractors"
-  },
-  {
-    id:132,
-    company:"Petroleum coke",
-    country:"Gulf Region / Global",
-    lat:27.5486,
-    lng:44.27,
-    status:"Monitoring",
-    type:"US domestic supply intact; Saudi/Gulf exports halted; US refinery attrition adds moderate pressure; prices +3-5%",
-    start:"2026-04-03",
-    products:["Petroleum coke"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/us-petcoke-prices-rise-1-4-in-feb-as-refinery-outages-and-logistics-41241"
-  },
-  {
-    id:133,
-    company:"Petcoke products",
-    country:"Gulf Region / Global",
-    lat:23.5895,
-    lng:53.1981,
-    status:"Monitoring",
-    type:"Gulf calcined/fuel-grade petcoke exports halted; India/Turkey most exposed; US supply relatively stable",
-    start:"2026-04-03",
-    products:["Petcoke products"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/us-petcoke-prices-rise-1-4-in-feb-as-refinery-outages-and-logistics-41241"
-  },
-  {
-    id:134,
-    company:"Natural Gas (LNG supply chain)",
-    country:"Qatar / Gulf Region",
-    lat:24.4,
-    lng:53.905,
-    status:"Shutdown",
-    type:"Qatar LNG outages and Hormuz closure have turned gas, fertilizer, and gas-based chemicals into one supply shock",
-    start:"2026-04-03",
-    products:["Natural Gas (LNG supply chain)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://thepeninsulaqatar.com/article/24/03/2026/qatarenergy-declares-force-majeure-on-some-lng-contracts"
-  },
-  {
-    id:135,
-    company:"Methane-rich gas",
-    country:"Qatar / Gulf Region",
-    lat:24.6482,
-    lng:53.1536,
-    status:"Shutdown",
-    type:"Direct LNG monetization disrupted; methane-rich gas can no longer move into export LNG and downstream products",
-    start:"2026-04-03",
-    products:["Methane-rich gas"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.qatarenergy.qa/en/MediaCenter/Pages/newsdetails.aspx?ItemId=3893"
-  },
-  {
-    id:136,
-    company:"Ammonia",
-    country:"Qatar / Gulf Region",
-    lat:23.9275,
-    lng:53.6395,
-    status:"Shutdown",
-    type:"Ammonia balances under severe pressure as Gulf gas and export channels tighten simultaneously",
-    start:"2026-04-03",
-    products:["Ammonia"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.worldfertilizer.com/nitrogen/01042026/beyond-oil-how-a-regional-conflict-threatens-fertilizer-and-ammonia-trade/"
-  },
-  {
-    id:137,
-    company:"Urea",
-    country:"Qatar / Gulf Region",
-    lat:24.8454,
-    lng:54.1062,
-    status:"Shutdown",
-    type:"Most exposed downstream product; Gulf supply and vessel availability both heavily disrupted",
-    start:"2026-04-03",
-    products:["Urea"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.aa.com.tr/en/world/strait-of-hormuz-crisis-threatens-world-fertilizer-supply-chain/3875786"
-  },
-  {
-    id:138,
-    company:"Nitric acid",
-    country:"Qatar / Gulf Region",
-    lat:24.2892,
-    lng:52.6002,
-    status:"Reduced",
-    type:"Less globally traded than urea, but ammonia feedstock inflation pushing costs and tightening local balances",
-    start:"2026-04-03",
-    products:["Nitric acid"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.worldfertilizer.com/nitrogen/01042026/beyond-oil-how-a-regional-conflict-threatens-fertilizer-and-ammonia-trade/"
-  },
-  {
-    id:139,
-    company:"Ammonium nitrate",
-    country:"Qatar / Gulf Region",
-    lat:24.0224,
-    lng:54.4984,
-    status:"Reduced",
-    type:"Ammonium nitrate tightening through combined squeeze on ammonia and nitric acid",
-    start:"2026-04-03",
-    products:["Ammonium nitrate"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.worldfertilizer.com/nitrogen/01042026/beyond-oil-how-a-regional-conflict-threatens-fertilizer-and-ammonia-trade/"
-  },
-  {
-    id:140,
-    company:"UAN (Urea ammonium nitrate)",
-    country:"Qatar / Gulf Region",
-    lat:25.1386,
-    lng:53.2661,
-    status:"Reduced",
-    type:"UAN exposed through ammonia and urea chain; production outside Gulf provides some buffer",
-    start:"2026-04-03",
-    products:["UAN (Urea ammonium nitrate)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.worldfertilizer.com/nitrogen/01042026/beyond-oil-how-a-regional-conflict-threatens-fertilizer-and-ammonia-trade/"
-  },
-  {
-    id:141,
-    company:"Methanol",
-    country:"Qatar / Gulf Region",
-    lat:23.6709,
-    lng:52.986,
-    status:"Shutdown",
-    type:"Methanol most exposed gas-based chemical chain; Methanex CEO: 18-20 Mt/yr of ME methanol exports shut in",
-    start:"2026-04-03",
-    products:["Methanol"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.icis.com/explore/resources/news/2026/03/06/11186452/methanex-sees-18-20-million-tonnes-year-of-middle-east-methanol-exports-shut-in-ceo/"
-  },
-  {
-    id:142,
-    company:"Formaldehyde",
-    country:"Qatar / Gulf Region",
-    lat:24.7,
-    lng:54.853,
-    status:"Reduced",
-    type:"Formaldehyde follows methanol higher, pushing cost pressure into resins, wood panels, and binders",
-    start:"2026-04-03",
-    products:["Formaldehyde"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iom3.org/resource/strait-of-hormuz-closure-affects-chemicals-and-plastics-exports.html"
-  },
-  {
-    id:143,
-    company:"Acetic acid",
-    country:"Qatar / Gulf Region",
-    lat:24.7528,
-    lng:52.2455,
-    status:"Reduced",
-    type:"Acetic acid costs rising with methanol, tightening margins for downstream solvents, acetates, and VAM chains",
-    start:"2026-04-03",
-    products:["Acetic acid"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iom3.org/resource/strait-of-hormuz-closure-affects-chemicals-and-plastics-exports.html"
-  },
-  {
-    id:144,
-    company:"MTBE",
-    country:"Qatar / Gulf Region",
-    lat:23.5195,
-    lng:54.2159,
-    status:"Reduced",
-    type:"MTBE squeezed from both sides - methanol feedstock tighter and C4 components also under pressure",
-    start:"2026-04-03",
-    products:["MTBE"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iom3.org/resource/strait-of-hormuz-closure-affects-chemicals-and-plastics-exports.html"
-  },
-  {
-    id:145,
-    company:"DME (Dimethyl ether)",
-    country:"Qatar / Gulf Region",
-    lat:25.3707,
-    lng:54.0486,
-    status:"Reduced",
-    type:"DME faces tighter methanol economics and stronger competition from stressed LPG markets",
-    start:"2026-04-03",
-    products:["DME (Dimethyl ether)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iom3.org/resource/strait-of-hormuz-closure-affects-chemicals-and-plastics-exports.html"
-  },
-  {
-    id:146,
-    company:"Methylamines and ethanolamines",
-    country:"Qatar / Gulf Region",
-    lat:23.8682,
-    lng:52.1475,
-    status:"Reduced",
-    type:"SABIC declared FM on ethanolamines (late March); Sadara shut ethanolamine production entirely March 31",
-    start:"2026-04-08",
-    products:["Methylamines and ethanolamines"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.icis.com/explore/resources/news/2026/03/30/11193220/insight-saudi-sabic-force-majeure-aggravates-global-chemicals-shortage"
-  },
-  {
-    id:147,
-    company:"MTO olefins",
-    country:"Qatar / Gulf Region",
-    lat:24.1633,
-    lng:55.2497,
-    status:"Reduced",
-    type:"MTO economics deteriorating as methanol costs surge and merchant methanol availability worsens",
-    start:"2026-04-03",
-    products:["MTO olefins"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iom3.org/resource/strait-of-hormuz-closure-affects-chemicals-and-plastics-exports.html"
-  },
-  {
-    id:148,
-    company:"Upstream NGL sidecar",
-    country:"Qatar / Gulf Region",
-    lat:25.3345,
-    lng:52.553,
-    status:"Shutdown",
-    type:"Ethane, propane, and butane side streams from Gulf gas disrupted, tightening NGL-linked petrochemical chains",
-    start:"2026-04-03",
-    products:["Upstream NGL sidecar"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.iom3.org/resource/strait-of-hormuz-closure-affects-chemicals-and-plastics-exports.html"
-  },
-  {
-    id:149,
-    company:"Ethylene (NGL/LNG route)",
-    country:"Qatar / Gulf Region",
-    lat:23.2287,
-    lng:53.3389,
-    status:"Shutdown",
-    type:"31+ FMs declared globally; NE Asian cracker utilization fell from 80% to 60%; Sadara 1.5M t/yr suspended",
-    start:"2026-04-03",
-    products:["Ethylene (NGL/LNG route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2808400-saudi-sadara-petchem-site-shuts-down-on-us-iran-war"
-  },
-  {
-    id:150,
-    company:"PE - HDPE/LDPE/LLDPE (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:25.1853,
-    lng:55.0245,
-    status:"Shutdown",
-    type:"Gulf ethane-linked PE is a major export flow - QatarEnergy halted polymers; Gulf export lanes impaired",
-    start:"2026-04-03",
-    products:["PE - HDPE/LDPE/LLDPE (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:151,
-    company:"Ethylene oxide (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:24.4519,
-    lng:51.6245,
-    status:"Shutdown",
-    type:"SABIC FM on EG/MEG (March 27); Gulf ethylene-linked EG severely disrupted; MEG at near 3-year highs",
-    start:"2026-04-08",
-    products:["Ethylene oxide (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemorbis.com/en/plastics-news/SABIC-declares-force-majeure-on-EG-amid-Hormuz-disruption/2026/03/27/965992"
-  },
-  {
-    id:152,
-    company:"Ethylene glycol MEG (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:23.4898,
-    lng:54.9978,
-    status:"Shutdown",
-    type:"SABIC FM on EG/MEG (March 27); Gulf cargoes blocked; MEG at near 3-year highs in Asia",
-    start:"2026-04-08",
-    products:["Ethylene glycol MEG (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemorbis.com/en/plastics-news/SABIC-declares-force-majeure-on-EG-amid-Hormuz-disruption/2026/03/27/965992"
-  },
-  {
-    id:153,
-    company:"EDC (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:25.7234,
-    lng:53.4798,
-    status:"Monitoring",
-    type:"EDC affected mainly through tighter ethylene and higher energy costs rather than a pure Gulf outage",
-    start:"2026-04-03",
-    products:["EDC (NGL route)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:154,
-    company:"Ethylbenzene (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:23.3571,
-    lng:52.2212,
-    status:"Shutdown",
-    type:"TKSC Kuwait 450K t/yr shut; TotalEnergies Gonfreville FM; INEOS Sarnia closing; styrene $1,800/mt Europe",
-    start:"2026-04-08",
-    products:["Ethylbenzene (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2798277-kuwait-s-tksc-declares-force-majeure-over-us-iran-war"
-  },
-  {
-    id:155,
-    company:"Styrene monomer SM (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:24.5855,
-    lng:55.7195,
-    status:"Shutdown",
-    type:"SABIC FM on SM (March 26); Petrokemya FM on Jubail SM; US exporters scrambling to fill European supply gap",
-    start:"2026-04-08",
-    products:["Styrene monomer SM (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2807387-us-styrene-exporters-move-to-fulfill-supply-constraints"
-  },
-  {
-    id:156,
-    company:"VAM (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:25.2127,
-    lng:51.758,
-    status:"Monitoring",
-    type:"VAM cushioned by diversified production, but ethylene and methanol-linked costs both moving higher",
-    start:"2026-04-03",
-    products:["VAM (NGL route)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:157,
-    company:"LAO linear alpha olefins (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:22.9812,
-    lng:54.0715,
-    status:"Reduced",
-    type:"LAO markets tightening because Gulf ethylene-linked alpha olefin output disrupted; substitution limited",
-    start:"2026-04-03",
-    products:["LAO linear alpha olefins (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:158,
-    company:"Ethanolamines (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:25.6884,
-    lng:54.7234,
-    status:"Reduced",
-    type:"SABIC declared FM on ethanolamines (late March); Sadara shut ethanolamine production entirely March 31",
-    start:"2026-04-08",
-    products:["Ethanolamines (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2808400-saudi-sadara-petchem-site-shuts-down-on-us-iran-war"
-  },
-  {
-    id:159,
-    company:"Propylene (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:23.9396,
-    lng:51.3299,
-    status:"Shutdown",
-    type:"Both FCC and steam cracker propylene severely curtailed; Sadara 400K t/yr offline; India LPG diversion",
-    start:"2026-04-03",
-    products:["Propylene (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/petrochemicals/Hormuz-Strait-pinch-worsens-Asian/104/web/2026/03"
-  },
-  {
-    id:160,
-    company:"Polypropylene PP (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:23.7523,
-    lng:55.7558,
-    status:"Shutdown",
-    type:"PP under heavy pressure as Gulf polymer exports disrupted and propane-linked propylene loses flexibility",
-    start:"2026-04-03",
-    products:["Polypropylene PP (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:161,
-    company:"Acrylonitrile (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:25.8512,
-    lng:52.6302,
-    status:"Reduced",
-    type:"SABIC/SHROUQ Jubail ~200K t/yr offline; Asian propylene feedstock shortages; NA production insulated",
-    start:"2026-04-03",
-    products:["Acrylonitrile (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
-  },
-  {
-    id:162,
-    company:"Propylene oxide and polyols (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:22.893,
-    lng:52.7318,
-    status:"Reduced",
-    type:"PO and polyols vulnerable because they sit downstream of already stressed propylene markets",
-    start:"2026-04-03",
-    products:["Propylene oxide and polyols (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:163,
-    company:"Acrylic acid and acrylates (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:25.1581,
-    lng:55.8186,
-    status:"Monitoring",
-    type:"Acrylic acid and acrylates mainly exposed through higher propylene costs rather than direct Gulf dependence",
-    start:"2026-04-03",
-    products:["Acrylic acid and acrylates (NGL route)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:164,
-    company:"Cumene (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:24.8223,
-    lng:51.0829,
-    status:"Reduced",
-    type:"SABIC Jubail phenol/acetone disrupted; Formosa Taiwan FM; Asian benzene/propylene shortages compound",
-    start:"2026-04-03",
-    products:["Cumene (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/phenol-and-acetone-supply-in-asia-low-amid-force-majeure-by-major-producer-7679"
-  },
-  {
-    id:165,
-    company:"Alcohols (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:22.9838,
-    lng:54.9915,
-    status:"Monitoring",
-    type:"Oxo alcohol and related alcohol chains tighter as propylene costs rise and regional supply flexibility falls",
-    start:"2026-04-03",
-    products:["Alcohols (NGL route)"],
-    capacity:"",
-    impact:"Medium",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:166,
-    company:"C4s (NGL route)",
-    country:"Qatar / Gulf Region",
-    lat:26.0856,
-    lng:54.0256,
-    status:"Reduced",
-    type:"C4 balances tightening as butane-rich side streams and integrated Gulf petrochemical output disrupted",
-    start:"2026-04-03",
-    products:["C4s (NGL route)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  },
-  {
-    id:167,
-    company:"Butadiene (NGL C4)",
-    country:"Qatar / Gulf Region",
-    lat:23.3368,
-    lng:51.4395,
-    status:"Reduced",
-    type:"CSPC China declared FM on butadiene; OMV Germany and Orlen Poland also under FM; cracker cuts reduce output",
-    start:"2026-04-03",
-    products:["Butadiene (NGL C4)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://cen.acs.org/business/petrochemicals/Iran-war-hits-chemical-sector/104/web/2026/03"
-  },
-  {
-    id:168,
-    company:"1-butene (NGL C4)",
-    country:"Qatar / Gulf Region",
-    lat:24.2545,
-    lng:56.3067,
-    status:"Reduced",
-    type:"India's C4 diversion order eliminates domestic 1-butene for petchem; global cracker cuts reduce supply",
-    start:"2026-04-03",
-    products:["1-butene (NGL C4)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://www.business-standard.com/economy/news/govt-permits-c3-c4-allocation-pharma-chemicals-food-sectors-126040201279_1.html"
-  },
-  {
-    id:169,
-    company:"Isobutylene and PIB (NGL C4)",
-    country:"Qatar / Gulf Region",
-    lat:25.7121,
-    lng:51.6868,
-    status:"Reduced",
-    type:"Isobutylene and PIB exposed through tighter C4 balances and weaker flexibility in gas-linked side streams",
-    start:"2026-04-03",
-    products:["Isobutylene and PIB (NGL C4)"],
-    capacity:"",
-    impact:"High",
-    confidence:"Confirmed",
-    source:"https://datalab.wto.org/Strait-of-Hormuz-Trade-Tracker"
-  }
-];
+  ];
 
 // ── FORCE MAJEURE DECLARATIONS ──
 const FM_DATA = [
@@ -2578,82 +1026,6 @@ const FM_DATA = [
   { company:"SABIC", country:"Saudi Arabia", product:"Multiple chemicals — global shortage", date:"2026-03-30", source:"ICIS" },
   { company:"Sinopec CPDC", country:"China", product:"Ethylene, PTA, PA6", date:"2026-03-25", source:"Chemnet" },
   { company:"Bapco Energies", country:"Bahrain", product:"Sitra Refinery — all products", date:"2026-03-09", source:"Reuters" },
-];
-
-// ── NEWS DATA ──
-const NEWS = [
-  {
-    source:"Reuters", date:"19 Mar 2026",
-    title:"Lanxess raises chemical prices to counter effects of Iran war",
-    body:"The speciality chemicals maker announced price increases as the third week of the Israeli-Iranian conflict pushes up costs across the chemicals sector, sparking fears of a wider oil price shock.",
-    url:"https://www.aol.com/articles/lanxess-raises-chemical-prices-counter-124031493.html"
-  },
-  {
-    source:"Fortune / Reuters", date:"27 Mar 2026",
-    title:"Dow CEO: Iran war will keep petrochemical prices high through end of 2026",
-    body:"Dow chair and CEO Jim Fitterling said 'the die is cast' from the Iran war for high prices, estimating that unwinding the shortages could take up to 275 days.",
-    url:"https://fortune.com/2026/03/27/dow-ceo-iran-war-high-petrochemical-prices-through-2026/"
-  },
-  {
-    source:"ICIS", date:"30 Mar 2026",
-    title:"SABIC force majeure aggravates global chemicals shortage",
-    body:"Saudi SABIC's force majeure declaration is further squeezing already tight global chemical supply chains, particularly affecting polyolefins and basic chemicals globally.",
-    url:"https://www.icis.com/explore/resources/news/2026/03/30/11193323/"
-  },
-  {
-    source:"Arab News", date:"31 Mar 2026",
-    title:"Sadara Chemical (Aramco–Dow JV) halts production at Jubail complex",
-    body:"Sadara Chemical, operating a complex with over 3 million metric tonnes annual capacity, temporarily shut down citing ongoing supply chain disruptions. The suspension was announced in a regulatory filing.",
-    url:"https://www.arabnews.com/node/2638284/business-economy"
-  },
-  {
-    source:"Fitch Ratings", date:"25 Mar 2026",
-    title:"Middle East Conflict Will Constrain Chemical Production and Trade",
-    body:"Fitch warns that prolonged closure of the Strait of Hormuz, lasting significantly longer than one month, will materially constrain chemical production and global trade flows.",
-    url:"https://www.fitchratings.com/research/corporate-finance/middle-east-conflict-will-constrain-chemical-production-trade-25-03-2026"
-  },
-  {
-    source:"ICIS", date:"4 Mar 2026",
-    title:"Mideast conflict threatens Asia petrochemical production",
-    body:"Force majeure declarations spreading across Asia. Major producers fear feedstock supplies cannot cross the Strait of Hormuz. Naphtha-based crackers taking widespread run cuts, threatening PP and PE supply.",
-    url:"https://www.icis.com/explore/resources/news/2026/03/04/11185153/"
-  },
-  {
-    source:"Korea Times", date:"13 Mar 2026",
-    title:"Fears of force majeure spread across industries as Iran war continues",
-    body:"A growing number of Korean companies have declared or warned of force majeure as the ongoing war between the US, Israel and Iran disrupts naphtha supply chains.",
-    url:"https://www.koreatimes.co.kr/business/companies/20260313/fears-of-force-majeure-spread-across-industries-as-iran-war-continues"
-  },
-  {
-    source:"C&EN", date:"Mar 2026",
-    title:"Strait of Hormuz closure hits Asia's chemical industry",
-    body:"Facilities across Asia declare force majeure as feedstock supplies are disrupted. The chemical industry is facing its most severe supply shock in years as the Hormuz closure ripples through petrochemical supply chains.",
-    url:"https://cen.acs.org/business/petrochemicals/Strait-Hormuz-closure-hits-Asias/104/web/2026/03"
-  },
-  {
-    source:"Asia Business Daily", date:"19 Mar 2026",
-    title:"Petrochemical operating rates plunge to 60% in South Korea",
-    body:"Due to geopolitical risks originating from the Middle East, disruptions in naphtha supply are shaking the entire domestic petrochemical industry. Non-NCC facilities also at risk if shutdown continues into April.",
-    url:"https://www.asiae.co.kr/en/article/2026031810213821859"
-  },
-  {
-    source:"ETPharma", date:"30 Mar 2026",
-    title:"Rising chemical costs choke drug ingredient makers — paracetamol prices double",
-    body:"Rising costs of key chemicals triggered by the West Asia conflict are choking production at India's drug ingredient manufacturers, with paracetamol prices more than doubling and several production units halting operations.",
-    url:"https://pharma.economictimes.indiatimes.com/news/pharma-industry/rising-costs-of-key-chemicals-choke-production-at-drug-ingredient-makers/129789749"
-  },
-  {
-    source:"ChemAnalyst", date:"Early Mar 2026",
-    title:"US MEK prices surge 25% as Asian supply tightens",
-    body:"The US MEK market shifted from subdued trading to a sharp firming in early March as Asian supply tightened due to naphtha cracker run cuts and elevated feedstock costs from Middle East disruptions.",
-    url:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/us-mek-prices-surge-25-in-early-march-as-asian-supply-tightens-41445"
-  },
-  {
-    source:"ChemAnalyst", date:"Early Mar 2026",
-    title:"China DMF prices jump 36% in early March 2026",
-    body:"Dimethylformamide prices in China surged as precautionary restocking collided with rising feedstock and logistics costs due to escalating Middle East tensions.",
-    url:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/china-dimethylformamide-prices-jump-36-in-early-march-2026-41467"
-  }
 ];
 
 // ── STATE ──
@@ -2768,22 +1140,67 @@ function markerColor(s, isSelected) {
 // ── TOOLTIP ──
 const tip = document.getElementById('tooltip');
 
+// ── TOOLTIP HELPERS ──
+function getIntensityScore(d) {
+  if (d.impact === 'High')   return d.status === 'Shutdown' ? 5 : 4;
+  if (d.impact === 'Medium') return d.status === 'Shutdown' ? 3 : d.status === 'Reduced' ? 3 : 2;
+  return 1; // Low
+}
+
+function renderDots(score) {
+  const col = score >= 4 ? '#ff4444' : score >= 2 ? '#f0a020' : '#18c870';
+  const dim = 'rgba(255,255,255,0.12)';
+  let h = '';
+  for (let i = 1; i <= 5; i++)
+    h += `<span style="color:${i<=score?col:dim};font-size:14px;line-height:1;margin-right:1px">●</span>`;
+  h += `<span style="font-family:var(--font-mono);font-size:8px;color:${col};margin-left:5px;vertical-align:middle">${score}/5</span>`;
+  return h;
+}
+
+function getDisplayName(d) {
+  if (d.company.includes(' — ')) return d.company.split(' — ')[0].trim();
+  if (d.company.includes(' - ')) return d.company.substring(0, d.company.indexOf(' - ')).trim();
+  return d.company;
+}
+
+function getLocationStr(d) {
+  let facility = '';
+  if (d.company.includes(' — '))
+    facility = d.company.split(' — ').slice(1).join(' — ').trim();
+  else if (d.company.includes(' - '))
+    facility = d.company.substring(d.company.indexOf(' - ') + 3).trim();
+  return facility ? `${facility}, ${d.country}` : d.country;
+}
+
 // Fill tooltip DOM with disruption data
 function populateTip(d) {
-  document.getElementById('tt-co').textContent   = d.company;
-  document.getElementById('tt-ctry').textContent = d.country;
+  document.getElementById('tt-co').textContent       = getDisplayName(d);
+  document.getElementById('tt-location').textContent = getLocationStr(d);
+
   const sc = d.status==='Shutdown'?'b-fm': d.status==='Maintenance'?'b-yellow': d.status==='Reduced'?'b-orange':'b-cyan';
-  const statusLabel = d.status==='Shutdown'?'Force Majeure': d.status==='Maintenance'?'Maint. Shutdown': d.status==='Reduced'?'Reduced Rates':'Monitoring/Alert';
-  document.getElementById('tt-status').innerHTML =
-    `<span class="badge ${sc}">${statusLabel}</span><span style="color:var(--text-dim);font-size:8px;margin-left:5px">${d.type}</span>`;
-  document.getElementById('tt-start').textContent = d.start || '—';
-  document.getElementById('tt-prod').textContent  = Array.isArray(d.products) ? d.products.slice(0,3).join(', ')+(d.products.length>3?'…':'') : d.products;
-  document.getElementById('tt-cap').textContent   = d.capacity || '—';
-  const ic = d.impact==='High'?'color:#ff6666': d.impact==='Medium'?'color:#f5c050':'color:#5ec9ff';
-  document.getElementById('tt-imp').innerHTML  = `<span style="${ic}">${d.impact}</span>`;
+  const statusLabel = d.status==='Shutdown' ? 'Force Majeure'
+    : d.status==='Maintenance' ? 'Scheduled Maintenance'
+    : d.status==='Reduced'    ? 'Operating at Lower Rates'
+    :                            'Monitoring / Alert';
+  document.getElementById('tt-status').innerHTML    = `<span class="badge ${sc}">${statusLabel}</span>`;
+  document.getElementById('tt-intensity').innerHTML = renderDots(getIntensityScore(d));
+  document.getElementById('tt-start').textContent   = d.start   || '—';
+  document.getElementById('tt-restart').textContent = d.restart || 'Unknown — Under Assessment';
+  document.getElementById('tt-prod').textContent    = Array.isArray(d.products) ? d.products.join(', ') : (d.products || '—');
+  document.getElementById('tt-cap').textContent     = d.capacity || '—';
+
   const cc = d.confidence==='Confirmed'?'color:#18c870': d.confidence==='Likely'?'color:#f5c050':'color:var(--text-dim)';
-  document.getElementById('tt-conf').innerHTML = `<span style="${cc}">${d.confidence}</span>`;
-  document.getElementById('tt-src').textContent  = d.source || '—';
+  document.getElementById('tt-conf').innerHTML = `<span style="${cc}">${d.confidence || '—'}</span>`;
+
+  const src = d.source || '—';
+  if (src.startsWith('http'))
+    document.getElementById('tt-src').innerHTML =
+      `<a href="${src}" target="_blank" rel="noopener"
+          style="color:var(--accent2);text-decoration:none"
+          onmouseover="this.style.textDecoration='underline'"
+          onmouseout="this.style.textDecoration='none'">View Source ↗</a>`;
+  else
+    document.getElementById('tt-src').textContent = src;
 }
 
 function moveTip(x, y) {
@@ -2936,7 +1353,7 @@ function switchPanelTab(tab) {
   panelTab = tab;
   document.querySelectorAll('.ptab').forEach(t=>t.classList.toggle('active', t.getAttribute('onclick').includes(`'${tab}'`)));
   const sw = document.getElementById('panel-search-wrap');
-  sw.style.display = tab === 'news' || tab === 'fm' ? 'none' : '';
+  sw.style.display = tab === 'fm' ? 'none' : '';
   renderPanel();
 }
 
@@ -2947,7 +1364,6 @@ function filterPanel() {
 
 function renderPanel() {
   if (panelTab === 'disruptions') renderDisruptions();
-  else if (panelTab === 'news')   renderNews();
   else if (panelTab === 'fm')     renderFM();
 }
 
@@ -2999,28 +1415,7 @@ function selectItem(id) {
   flyToDisruption(d);
 }
 
-function findDisruptionBySource(url) {
-  if (!url) return null;
-  return DISRUPTIONS.find(d => d.source && typeof d.source === 'string' &&
-    (d.source === url || url.includes(d.source.split('/').slice(2,4).join('/')))
-  ) || null;
-}
-
 // Find best disruption match for a news item by title/body keywords
-function findDisruptionForNews(n) {
-  const haystack = (n.title + ' ' + n.body).toLowerCase();
-  // Score each disruption by keyword hits
-  let best = null, bestScore = 0;
-  DISRUPTIONS.forEach(d => {
-    let score = 0;
-    const words = d.company.toLowerCase().split(/[\s\-\/—]+/).filter(w => w.length > 3);
-    words.forEach(w => { if (haystack.includes(w)) score++; });
-    if (d.country && haystack.includes(d.country.toLowerCase())) score += 0.5;
-    if (score > bestScore) { bestScore = score; best = d; }
-  });
-  return bestScore >= 2 ? best : null;
-}
-
 function flyToDisruption(d, switchToDisruptions) {
   if (!d) return;
   selectedId = d.id;
@@ -3048,30 +1443,6 @@ function flyToDisruption(d, switchToDisruptions) {
     const cy = gw.offsetTop  + Math.round(gw.offsetHeight * 0.42);
     pinTip(d, cx, cy);
   }, 860);
-}
-
-function renderNews() {
-  const pc = document.getElementById('panel-content');
-  let html = NEWS.map(n => {
-    const linked = findDisruptionForNews(n) || findDisruptionBySource(n.url);
-    const lid = linked ? linked.id : null;
-    const highlightBorder = lid ? 'border-left:2px solid var(--accent2);padding-left:12px;' : '';
-    // Clicking the card opens source URL; only the MAP badge flies to the marker
-    const mapBadge = lid
-      ? `<span onclick="event.stopPropagation();flyToDisruption(DISRUPTIONS.find(x=>x.id===${lid}),true)"
-           style="font-family:var(--font-mono);font-size:7px;color:var(--accent2);margin-left:6px;
-                  background:rgba(34,153,238,0.1);padding:1px 5px;border:1px solid rgba(34,153,238,0.3);
-                  cursor:pointer;border-radius:1px;" title="Show on map">↗ MAP</span>`
-      : '';
-    return `
-    <div class="news-item" onclick="window.open('${n.url}','_blank')" style="cursor:pointer;${highlightBorder}">
-      <div><span class="news-source">${n.source}</span><span class="news-date">${n.date}</span>${mapBadge}</div>
-      <div class="news-head">${n.title}</div>
-      <div class="news-body">${n.body}</div>
-      <a class="news-link" href="${n.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()">↗ Read source</a>
-    </div>`;
-  }).join('');
-  pc.innerHTML = html;
 }
 
 function renderFM() {
