@@ -508,8 +508,8 @@
       <div class="hstat-lbl">Monitoring</div>
     </div>
     <div class="hstat">
-      <div class="hstat-num green" id="cnt-fm">0</div>
-      <div class="hstat-lbl">Force Majeure</div>
+      <div class="hstat-num" style="color:var(--text-dim)" id="cnt-total">0</div>
+      <div class="hstat-lbl">Total Events</div>
     </div>
   </div>
 
@@ -1572,7 +1572,7 @@ function renderStats() {
   document.getElementById('cnt-sd').textContent = DISRUPTIONS.filter(d=>d.status==='Shutdown'||d.status==='Maintenance').length;
   document.getElementById('cnt-rd').textContent = DISRUPTIONS.filter(d=>d.status==='Reduced').length;
   document.getElementById('cnt-mt').textContent = DISRUPTIONS.filter(d=>d.status==='Monitoring').length;
-  document.getElementById('cnt-fm').textContent = FM_DATA.length;
+  document.getElementById('cnt-total').textContent = DISRUPTIONS.length;
 }
 
 // ── FILTERS ──
@@ -1622,7 +1622,7 @@ function renderDisruptions() {
   const monitoring  = items.filter(d=>d.status==='Monitoring');
 
   // ── Summary stats bar ──
-  const total = shutdowns.length + maintenance.length + reduced.length + monitoring.length;
+  const total = DISRUPTIONS.length;
   const sumEl = document.getElementById('panel-summary');
   if (sumEl) sumEl.innerHTML =
     `<div class="sum-col"><span class="sum-val" style="color:#ff4444">${shutdowns.length}</span><span class="sum-lbl">Force Maj.</span></div>` +
