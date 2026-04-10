@@ -1113,6 +1113,157 @@ const FM_DATA = [
   { company:"SABIC", country:"Saudi Arabia", product:"Multiple chemicals — global shortage", date:"2026-03-30", source:"ICIS" },
   { company:"Sinopec CPDC", country:"China", product:"Ethylene, PTA, PA6", date:"2026-03-25", source:"Chemnet" },
   { company:"Bapco Energies", country:"Bahrain", product:"Sitra Refinery — all products", date:"2026-03-09", source:"Reuters" },
+  {
+    id:81, company:"INEOS Oxide — Antwerp Plant", country:"Belgium",
+    lat:51.2194, lng:4.3758,
+    status:"Shutdown", type:"Force Majeure — feedstock disruption from Hormuz crisis",
+    start:"2026-04-01", restart:"Unknown",
+    products:["Ethylene oxide"],
+    capacity:"~500 kt/yr ethylene oxide",
+    impact:"High", confidence:"Confirmed",
+    source:"https://www.chemanalyst.com/NewsAndDeals/NewsDetails/are-feedstock-shortages-and-war-risks-pushing-petrochemical-41387"
+  },
+  {
+    id:82, company:"INEOS Styrolution — Sarnia", country:"Canada",
+    lat:42.971, lng:-82.397,
+    status:"Shutdown", type:"Force Majeure / permanent closure — styrene supply chain collapse",
+    start:"2026-03-28", restart:"Permanent closure by June 2026",
+    products:["Ethylbenzene","Acrylonitrile","Styrene monomer (SM)"],
+    capacity:"~450 kt/yr",
+    impact:"High", confidence:"Confirmed",
+    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2798277-kuwait-s-tksc-declares-force-majeure-over-us-iran-war"
+  },
+  {
+    id:83, company:"Idemitsu Kosan — Tokuyama Refinery", country:"Japan",
+    lat:33.95, lng:130.94,
+    status:"Reduced", type:"Feedstock disruption — Middle East benzene supply collapse",
+    start:"2026-04-01", restart:"Unknown",
+    products:["Benzene"],
+    capacity:"~300 kt/yr benzene",
+    impact:"Medium", confidence:"Reported",
+    source:"https://www.icis.com/explore/resources/news/2026/03/30/11193220/insight-saudi-sabic-force-majeure-aggravates-global-chemicals-shortage"
+  },
+  {
+    id:84, company:"Iraq State Oil — Basra Export Terminal", country:"Iraq",
+    lat:30.5, lng:47.8,
+    status:"Shutdown", type:"Force Majeure — US-Iran conflict; Basra export terminal halted",
+    start:"2026-03-20", restart:"Unknown",
+    products:["Crude Oil","Vacuum Gas Oil (VGO)","Residue"],
+    capacity:"~3.5 mb/d crude exports",
+    impact:"High", confidence:"Confirmed",
+    source:"https://www.aljazeera.com/news/2026/3/13/force-majeure-what-is-it-and-why-have-some-gulf-countries-invoked-it"
+  },
+  {
+    id:85, company:"Mangalore Refinery & Petrochemicals (MRPL)", country:"India",
+    lat:12.87, lng:74.88,
+    status:"Reduced", type:"Feedstock disruption — Middle East VGO supply collapse",
+    start:"2026-04-01", restart:"Unknown",
+    products:["Vacuum Gas Oil (VGO)"],
+    capacity:"~15 mt/yr crude capacity",
+    impact:"Medium", confidence:"Reported",
+    source:"https://syntexamerica.com/blog/hormuz-crisis-what-it-means-for-chemical-supply-chains/"
+  },
+  {
+    id:86, company:"Petrokemya (SABIC) — Al Jubail", country:"Saudi Arabia",
+    lat:25.348, lng:49.658,
+    status:"Shutdown", type:"Force Majeure — SM plant shutdown; declared FM 26 March 2026",
+    start:"2026-03-26", restart:"Unknown",
+    products:["Styrene monomer (SM)"],
+    capacity:"~450 kt/yr styrene",
+    impact:"High", confidence:"Confirmed",
+    source:"https://www.icis.com/explore/resources/news/2026/03/30/11193220/insight-saudi-sabic-force-majeure-aggravates-global-chemicals-shortage"
+  },
+  {
+    id:87, company:"Shell Pearl GTL — Ras Laffan", country:"Qatar",
+    lat:25.931, lng:51.5555,
+    status:"Shutdown", type:"Force Majeure — drone strike damage; 1+ year repair timeline",
+    start:"2026-03-15", restart:"2027 (est.)",
+    products:["Base oils","Finished lubricants","GTL naphtha","GTL kerosene"],
+    capacity:"~140,000 bbl/d GTL products; ~20% of global Group III base oil",
+    impact:"High", confidence:"Confirmed",
+    source:"https://ilma.org/ilma-seeks-immediate-relief-amid-group-iii-base-oil-supply-disruptions/"
+  },
+  {
+    id:88, company:"TKSC — Shuaiba Petrochemical", country:"Kuwait",
+    lat:29.075, lng:48.135,
+    status:"Shutdown", type:"Force Majeure — US-Iran conflict; 450 kt/yr SM plant shut",
+    start:"2026-03-25", restart:"Unknown",
+    products:["Styrene monomer (SM)","Ethylbenzene"],
+    capacity:"~450 kt/yr styrene monomer",
+    impact:"High", confidence:"Confirmed",
+    source:"https://www.argusmedia.com/en/news-and-insights/latest-market-news/2798277-kuwait-s-tksc-declares-force-majeure-over-us-iran-war"
+  },
+  {
+    id:89, company:"TotalEnergies — Gonfreville-l'Orcher", country:"France",
+    lat:49.49, lng:0.22,
+    status:"Reduced", type:"Force Majeure — feedstock disruption; SM/EB production curtailed",
+    start:"2026-04-02", restart:"Unknown",
+    products:["Styrene monomer (SM)","Ethylbenzene"],
+    capacity:"~350 kt/yr styrene",
+    impact:"High", confidence:"Confirmed",
+    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
+  },
+  {
+    id:90, company:"INEOS Styrolution — Altamira", country:"Mexico",
+    lat:22.38, lng:-97.86,
+    status:"Reduced", type:"Force Majeure — acrylonitrile supply disruption",
+    start:"2026-04-03", restart:"Unknown",
+    products:["Acrylonitrile"],
+    capacity:"~200 kt/yr acrylonitrile",
+    impact:"Medium", confidence:"Reported",
+    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
+  },
+  {
+    id:91, company:"OMV — Burghausen Chemical Complex", country:"Germany",
+    lat:48.169, lng:12.832,
+    status:"Reduced", type:"Feedstock disruption — Middle East C4 supply impacted",
+    start:"2026-04-01", restart:"Unknown",
+    products:["Butadiene","Isobutylene"],
+    capacity:"~100 kt/yr butadiene",
+    impact:"Medium", confidence:"Reported",
+    source:"https://cen.acs.org/business/petrochemicals/Iran-war-hits-chemical-sector/104/web/2026/03"
+  },
+  {
+    id:92, company:"Orlen — Plock Petrochemical Complex", country:"Poland",
+    lat:52.6292, lng:19.7042,
+    status:"Reduced", type:"Feedstock disruption — C4 supply from Middle East reduced",
+    start:"2026-04-01", restart:"Unknown",
+    products:["Butadiene"],
+    capacity:"~80 kt/yr butadiene",
+    impact:"Medium", confidence:"Reported",
+    source:"https://cen.acs.org/business/petrochemicals/Iran-war-hits-chemical-sector/104/web/2026/03"
+  },
+  {
+    id:93, company:"Orlen Unipetrol — Litvinov Complex", country:"Czech Republic",
+    lat:50.505, lng:13.43,
+    status:"Reduced", type:"Feedstock disruption — EDC/chlorine value chain impacted",
+    start:"2026-04-01", restart:"Unknown",
+    products:["Ethylene dichloride"],
+    capacity:"~200 kt/yr EDC",
+    impact:"Medium", confidence:"Reported",
+    source:"https://www.plasteurope.com/news/PETROCHEMICAL_MARKETS_t259818/"
+  },
+  {
+    id:94, company:"SABIC/SHROUQ JV — Jubail", country:"Saudi Arabia",
+    lat:25.3495, lng:49.6555,
+    status:"Shutdown", type:"Force Majeure — acrylonitrile plant shutdown; Jubail complex halted",
+    start:"2026-03-28", restart:"Unknown",
+    products:["Acrylonitrile"],
+    capacity:"~200 kt/yr acrylonitrile",
+    impact:"High", confidence:"Confirmed",
+    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
+  },
+  {
+    id:95, company:"Saudi Kayan — Jubail Petrochemical", country:"Saudi Arabia",
+    lat:25.349, lng:49.655,
+    status:"Shutdown", type:"Force Majeure — acrylonitrile and downstream shutdown",
+    start:"2026-03-28", restart:"Unknown",
+    products:["Acrylonitrile","Acrylic acid"],
+    capacity:"~200 kt/yr acrylonitrile",
+    impact:"High", confidence:"Confirmed",
+    source:"https://cen.acs.org/business/Iran-war-debilitate-petrochemicals-rest/104/web/2026/04"
+  }
+
 ];
 
 // ── STATE ──
