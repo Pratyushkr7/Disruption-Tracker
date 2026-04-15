@@ -16,9 +16,9 @@
     --surface3:   #1F1F1F;
     --border:     #252525;
     --border2:    #333333;
-    --text:       #F0F0F0;
-    --text-dim:   #888888;
-    --text-muted: #444444;
+    --text:       #FFFFFF;
+    --text-dim:   #C0C0C0;
+    --text-muted: #888888;
     --accent:     #A3FF12;
     --accent2:    #60A5FA;
     --red:        #EF4444;
@@ -234,7 +234,7 @@
 
   /* Filters */
   #filters {
-    position: absolute; top: 14px; left: 14px; z-index:100;
+    position: absolute; top: 14px; left: 14px; z-index:700;
     background: rgba(17,17,17,0.96);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -298,7 +298,7 @@
 
   /* Legend */
   #legend {
-    position: absolute; bottom: 16px; left: 14px; z-index:100;
+    position: absolute; bottom: 16px; left: 14px; z-index:700;
     background: rgba(17,17,17,0.96);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -342,7 +342,7 @@
 
   /* Toggle panel */
   #toggle-panel {
-    position: absolute; top: 14px; right: 14px; z-index:100;
+    position: absolute; top: 14px; right: 14px; z-index:700;
     background: rgba(17,17,17,0.96); border: 1px solid var(--border);
     border-radius: var(--radius); color: var(--text-dim); cursor:pointer;
     font-family: var(--font-sans); font-size:12px; font-weight:500;
@@ -595,7 +595,7 @@
 
 <!-- ── TICKER ── -->
 <div id="ticker-bar">
-  <div id="ticker-label">⚑ Breaking</div>
+  <div id="ticker-label">Newsfeed</div>
   <div id="ticker-track">
     <span id="ticker-inner">
       QatarEnergy force majeure — Ras Laffan entire LNG output halted after Iranian missile strikes <span class="tick-sep">·</span>
@@ -1272,13 +1272,19 @@ function initMap() {
   map = L.map('globeViz', {
     center: [25, 52],
     zoom: 4,
+    minZoom: 2,
+    maxZoom: 18,
     zoomControl: false,
     attributionControl: false,
+    worldCopyJump: false,
+    maxBounds: [[-90, -180], [90, 180]],
+    maxBoundsViscosity: 1.0,
   });
 
   // CartoDB dark base (no labels)
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
+    noWrap: true,
   }).addTo(map);
 
   // Labels in a custom pane above markers
@@ -1287,6 +1293,7 @@ function initMap() {
   map.getPane('labelsPane').style.pointerEvents = 'none';
   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
+    noWrap: true,
     pane: 'labelsPane',
   }).addTo(map);
 
