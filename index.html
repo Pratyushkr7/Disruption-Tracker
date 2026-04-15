@@ -3,29 +3,33 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Disruption Tracker</title>
+<title>Disruption Tracker — Valdera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
-
   :root {
-    --bg: #0a0c0e;
-    --surface: #111518;
-    --surface2: #161b20;
-    --surface3: #1c2228;
-    --border: #252d35;
-    --border2: #2f3d4a;
-    --text: #c8d8e8;
-    --text-dim: #5a7a95;
-    --text-muted: #2e4255;
-    --accent: #f8a100;    /* Bloomberg orange */
-    --accent2: #1890ff;   /* data blue */
-    --red: #e03030;
-    --red-bright: #ff4444;
-    --yellow: #f0a020;
-    --blue: #2299ee;
-    --green: #18c870;
-    --font-mono: 'IBM Plex Mono', monospace;
-    --font-sans: 'IBM Plex Sans', sans-serif;
+    --bg:         #0A0A0A;
+    --surface:    #111111;
+    --surface2:   #181818;
+    --surface3:   #1F1F1F;
+    --border:     #252525;
+    --border2:    #333333;
+    --text:       #FFFFFF;
+    --text-dim:   #C0C0C0;
+    --text-muted: #888888;
+    --accent:     #A3FF12;
+    --accent2:    #60A5FA;
+    --red:        #EF4444;
+    --orange:     #F97316;
+    --amber:      #F59E0B;
+    --blue:       #3B82F6;
+    --green:      #22C55E;
+    --font-sans:  'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono:  ui-monospace, 'SF Mono', 'Fira Code', monospace;
+    --radius:     8px;
+    --radius-lg:  12px;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -36,389 +40,245 @@
     font-family: var(--font-sans);
     overflow: hidden;
     height: 100vh; width: 100vw;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* ── Bloomberg-style top bar ── */
+  /* ── Header ── */
   #header {
     position: fixed; top:0; left:0; right:0; z-index:200;
-    height: 46px;
+    height: 52px;
     display: flex; align-items: stretch;
-    background: #0d1117;
-    border-bottom: 2px solid var(--accent);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
   }
-
   #logo-block {
     display: flex; align-items: center; gap: 10px;
-    padding: 0 18px;
+    padding: 0 20px;
     border-right: 1px solid var(--border);
-    background: #080b0e;
     flex-shrink: 0;
   }
   #logo-mark {
     width: 22px; height: 22px;
     background: var(--accent);
-    clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
-    animation: pulse-hex 3s ease-in-out infinite;
-  }
-  @keyframes pulse-hex {
-    0%,100% { filter: brightness(1); }
-    50% { filter: brightness(1.5) drop-shadow(0 0 8px rgba(248,161,0,0.8)); }
-  }
-  #app-name { font-family: var(--font-mono); font-size: 13px; font-weight:700; color: #fff; letter-spacing:0.05em; }
-  #app-tag  { font-family: var(--font-mono); font-size: 8px; color: var(--accent); letter-spacing:0.1em; text-transform:uppercase; }
-
-  #header-stats {
-    display: flex; align-items: center;
-    padding: 0 14px; gap: 4px;
-    border-right: 1px solid var(--border);
+    border-radius: 5px;
     flex-shrink: 0;
   }
-  .hstat {
-    display: flex; flex-direction: column; align-items: center;
-    padding: 4px 12px;
-    border-right: 1px solid var(--border);
-    cursor: default;
-  }
-  .hstat:last-child { border-right: none; }
-  .hstat-num { font-family: var(--font-mono); font-size: 15px; font-weight:700; line-height:1; }
-  .hstat-lbl { font-family: var(--font-mono); font-size: 7.5px; color: var(--text-dim); letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
-  .hstat-num.red    { color: var(--red-bright); }
-  .hstat-num.yellow { color: var(--yellow); }
-  .hstat-num.blue   { color: var(--blue); }
-  .hstat-num.green  { color: var(--green); }
+  #app-name { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+  #app-tag  { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
 
-  #header-right {
-    display: flex; align-items: center; gap: 16px;
-    padding: 0 18px; margin-left: auto;
-  }
-  #crisis-badge {
-    display: flex; align-items: center; gap: 6px;
-    padding: 4px 11px;
-    background: rgba(224,48,48,0.1);
-    border: 1px solid rgba(224,48,48,0.4);
-    font-family: var(--font-mono); font-size: 9px; font-weight:700;
-    color: #ff7070; letter-spacing:0.1em; text-transform:uppercase;
-  }
-  .blinking { animation: blink-dot 1s ease-in-out infinite; }
-  @keyframes blink-dot { 0%,100%{opacity:1} 50%{opacity:0.1} }
-  .live-dot { width:6px; height:6px; border-radius:50%; background: var(--red-bright); box-shadow: 0 0 6px var(--red-bright); }
-
-  #upd-wrap { font-family: var(--font-mono); font-size: 8.5px; color: var(--text-dim); }
-  #upd-wrap span { color: var(--text); }
-
-  /* tabs */
-  #tab-bar {
-    display: flex; align-items: center; gap: 2px;
-    padding: 0 8px;
-  }
+  #tab-bar { display: flex; align-items: stretch; padding: 0 10px; gap: 2px; }
   .tab-btn {
-    padding: 14px 14px;
+    padding: 0 16px; height: 100%;
     background: transparent; border: none; cursor: pointer;
-    font-family: var(--font-mono); font-size: 9.5px; font-weight:600;
-    color: var(--text-dim); letter-spacing:0.06em; text-transform:uppercase;
-    border-bottom: 2px solid transparent; margin-bottom: -2px;
-    transition: all 0.1s;
-    white-space: nowrap;
+    font-family: var(--font-sans); font-size: 13px; font-weight: 500;
+    color: var(--text-dim);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: all 0.15s; white-space: nowrap;
   }
   .tab-btn:hover { color: var(--text); }
   .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-  /* ── Main layout ── */
-  #app-body {
-    position: fixed; top:46px; bottom:28px; left:0; right:0;
-    display: flex;
-  }
+  /* ── Layout ── */
+  #app-body { position: fixed; top:52px; bottom:0; left:0; right:0; display: flex; }
 
-  /* ── Globe ── */
-  #globe-wrap {
-    flex: 1; position: relative; overflow: hidden;
-  }
+  #globe-wrap { flex: 1; position: relative; overflow: hidden; background: #0d0d0d; }
   #globeViz { width:100%; height:100%; }
+
+  /* Leaflet overrides */
+  .leaflet-container { background: #0d0d0d !important; font-family: var(--font-sans); }
+  .leaflet-control-zoom {
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    box-shadow: none !important;
+    overflow: hidden;
+  }
+  .leaflet-control-zoom a {
+    background: var(--surface) !important; color: var(--text-dim) !important;
+    border-bottom: 1px solid var(--border) !important;
+    width: 30px !important; height: 30px !important; line-height: 30px !important;
+    font-size: 16px !important;
+  }
+  .leaflet-control-zoom a:hover { background: var(--surface2) !important; color: var(--text) !important; }
+  .leaflet-attribution-flag { display: none !important; }
 
   /* ── Side panel ── */
   #side-panel {
     width: 340px; flex-shrink:0;
-    background: #0d1117;
+    background: var(--surface);
     border-left: 1px solid var(--border);
     display: flex; flex-direction: column;
     overflow: hidden;
-    transition: width 0.2s;
+    transition: width 0.25s ease-in-out;
   }
   #side-panel.collapsed { width: 0; }
 
-  #panel-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-  }
-  .ptab {
-    flex:1; padding: 9px 6px;
-    background: transparent; border: none; cursor: pointer;
-    font-family: var(--font-mono); font-size: 8.5px; font-weight:600;
-    color: var(--text-dim); letter-spacing:0.07em; text-transform:uppercase;
-    border-bottom: 2px solid transparent; margin-bottom: -1px;
-    transition: all 0.1s;
-  }
-  .ptab:hover { color: var(--text); background: var(--surface); }
-  .ptab.active { color: var(--accent); border-bottom-color: var(--accent); background: var(--surface2); }
-
   #panel-content { flex:1; overflow-y: auto; }
   #panel-content::-webkit-scrollbar { width: 4px; }
-  #panel-content::-webkit-scrollbar-thumb { background: var(--border2); border-radius:2px; }
-  #panel-content::-webkit-scrollbar-track { background: transparent; }
+  #panel-content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-  /* ── Panel: Disruptions list (redesigned) ── */
+  /* ── Disruptions list ── */
   .dis-item {
     position: relative;
-    padding: 11px 14px 10px 16px;
+    padding: 12px 14px 11px 18px;
     border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    transition: background 0.12s;
-    overflow: hidden;
+    cursor: pointer; transition: background 0.1s; overflow: hidden;
   }
   .dis-item::before {
     content:''; position:absolute; left:0; top:0; bottom:0;
-    width: 3px;
-    background: var(--item-strip, var(--border2));
-    transition: width 0.12s;
+    width: 3px; background: var(--item-strip, var(--border2));
   }
   .dis-item:hover { background: var(--surface2); }
-  .dis-item:hover::before { width: 4px; }
-  .dis-item.selected { background: rgba(248,161,0,0.05); }
+  .dis-item.selected { background: rgba(163,255,18,0.03); }
   .dis-item.selected::before { background: var(--accent) !important; }
 
-  /* Company name */
   .dis-co {
-    font-size: 11.5px; font-weight: 700;
-    color: #e2eeff; line-height: 1.3;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    margin-bottom: 2px;
+    font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px;
   }
-  /* Location / facility + country */
   .dis-loc {
-    font-family: var(--font-mono); font-size: 8px;
-    color: var(--accent2); margin-bottom: 6px;
+    font-size: 11px; color: var(--accent2); margin-bottom: 7px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
-  /* Status badge + dots row */
-  .dis-status-row {
-    display: flex; align-items: center; gap: 5px;
-    margin-bottom: 5px; flex-wrap: nowrap;
-  }
-  .dis-dots { display:flex; gap:1px; align-items:center; flex-shrink:0; }
-  .dis-dot  { font-size:9px; line-height:1; }
-  /* Since row */
-  .dis-since {
-    font-family: var(--font-mono); font-size: 7.5px;
-    color: var(--text-muted); margin-bottom: 5px;
-    display: flex; align-items: center; gap: 4px;
-  }
-  .dis-since-lbl { text-transform:uppercase; letter-spacing:0.08em; }
+  .dis-status-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: nowrap; }
+  .dis-dots { display:flex; gap:2px; align-items:center; flex-shrink:0; }
+  .dis-dot  { font-size:8px; line-height:1; }
+  .dis-since { font-size: 10px; color: var(--text-muted); margin-bottom: 5px; display: flex; align-items: center; gap: 4px; }
+  .dis-since-lbl { text-transform:uppercase; letter-spacing:0.05em; font-size:9px; }
   .dis-since-val { color: var(--text-dim); }
-  /* Product chips */
-  .dis-chips { display:flex; flex-wrap:wrap; gap:3px; margin-top:2px; }
+  .dis-chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:3px; }
   .dis-chip {
-    font-family: var(--font-mono); font-size: 7px;
-    padding: 1px 6px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--border2);
-    color: var(--text-dim);
-    white-space: nowrap;
+    font-size: 10px; padding: 2px 7px;
+    background: var(--surface3); border: 1px solid var(--border2);
+    border-radius: 4px; color: var(--text-dim); white-space: nowrap;
   }
   .dis-chip-more {
-    font-family: var(--font-mono); font-size: 7px;
-    padding: 1px 6px;
-    background: rgba(24,144,255,0.07);
-    border: 1px solid rgba(24,144,255,0.2);
-    color: var(--accent2);
+    font-size: 10px; padding: 2px 7px;
+    background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.2);
+    border-radius: 4px; color: var(--accent2);
   }
-  /* Confidence pill */
-  .dis-conf {
-    font-family: var(--font-mono); font-size: 7px;
-    margin-left: auto; flex-shrink: 0;
-    padding: 1px 5px;
-  }
-  /* Delete button (user-added markers only) */
+  .dis-conf { font-size: 10px; margin-left: auto; flex-shrink: 0; padding: 1px 6px; }
   .dis-delete {
-    position: absolute; top: 8px; right: 8px;
+    position: absolute; top: 10px; right: 10px;
     background: none; border: none; cursor: pointer;
-    color: rgba(255,80,60,0.45); font-size: 12px;
-    padding: 2px 4px; line-height: 1;
-    border-radius: 3px; transition: color 0.15s, background 0.15s;
-    display: none; /* shown on hover via parent */
+    color: rgba(239,68,68,0.4); font-size: 13px;
+    padding: 2px 4px; line-height: 1; border-radius: 4px;
+    transition: color 0.15s, background 0.15s; display: none;
   }
   .dis-item:hover .dis-delete { display: block; }
-  .dis-delete:hover { color: #ff3322; background: rgba(255,50,30,0.12); }
+  .dis-delete:hover { color: var(--red); background: rgba(239,68,68,0.1); }
+  .dis-meta { display: flex; align-items: center; gap: 6px; margin: 4px 0; flex-wrap: wrap; }
+  .dis-country { font-size: 11px; color: var(--text-dim); }
+  .dis-prod { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
 
-  /* ── Panel summary stats bar ── */
+  /* Panel summary */
   #panel-summary {
     display: flex; align-items: stretch;
     border-bottom: 1px solid var(--border);
-    background: #080c10;
-    flex-shrink: 0;
+    background: var(--bg); flex-shrink: 0;
   }
   .sum-col {
     flex: 1; display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    padding: 8px 4px;
-    border-right: 1px solid var(--border);
+    padding: 10px 4px; border-right: 1px solid var(--border);
   }
   .sum-col:last-child { border-right: none; }
-  .sum-val { font-family:var(--font-mono); font-size: 17px; font-weight: 700; line-height:1; }
-  .sum-lbl { font-family:var(--font-mono); font-size: 6.5px; text-transform:uppercase;
-              letter-spacing: 0.1em; color: var(--text-muted); margin-top: 3px; }
+  .sum-val { font-size: 20px; font-weight: 700; line-height:1; font-variant-numeric: tabular-nums; }
+  .sum-lbl { font-size: 9px; text-transform:uppercase; letter-spacing: 0.07em; color: var(--text-muted); margin-top: 3px; }
 
+  /* Badges — high contrast */
   .badge {
     display: inline-flex; align-items:center;
-    padding: 1px 5px;
-    border-radius: 1px;
-    font-family: var(--font-mono); font-size: 7.5px; font-weight:700;
-    letter-spacing:0.04em; text-transform:uppercase;
-    flex-shrink: 0;
+    padding: 2px 7px; border-radius: 5px;
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.03em; text-transform: uppercase; flex-shrink: 0;
   }
-  .b-red    { background:rgba(224,48,48,0.15); color:#ff6666; border:1px solid rgba(224,48,48,0.35); }
-  .b-yellow { background:rgba(240,160,32,0.15); color:#f5c050; border:1px solid rgba(240,160,32,0.35); }
-  .b-blue   { background:rgba(34,153,238,0.12); color:#5ec9ff; border:1px solid rgba(34,153,238,0.3); }
-  .b-orange { background:rgba(255,102,0,0.15); color:#ff8833; border:1px solid rgba(255,102,0,0.4); }
-  .b-fm     { background:rgba(139,0,0,0.2); color:#ff4444; border:1px solid rgba(139,0,0,0.5); }
-  .b-cyan   { background:rgba(0,229,255,0.1); color:#00e5ff; border:1px solid rgba(0,229,255,0.3); }
+  .b-red    { background:rgba(239,68,68,0.12); color:#F87171; border:1px solid rgba(239,68,68,0.25); }
+  .b-yellow { background:rgba(245,158,11,0.12); color:#FCD34D; border:1px solid rgba(245,158,11,0.25); }
+  .b-blue   { background:rgba(59,130,246,0.12); color:#93C5FD; border:1px solid rgba(59,130,246,0.25); }
+  .b-orange { background:rgba(249,115,22,0.12); color:#FCA172; border:1px solid rgba(249,115,22,0.25); }
+  .b-fm     { background:rgba(239,68,68,0.12); color:#F87171; border:1px solid rgba(239,68,68,0.25); }
+  .b-cyan   { background:rgba(59,130,246,0.12); color:#93C5FD; border:1px solid rgba(59,130,246,0.25); }
 
+  /* Advisory */
+  .adv-block { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+  .adv-title { font-size: 11px; font-weight: 600; color: var(--accent); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
+  .adv-text  { font-size: 12px; color: var(--text-dim); line-height:1.65; }
+  .adv-section { font-size:11px; font-weight:600; color:var(--text); margin:10px 0 5px; text-transform:uppercase; letter-spacing:0.04em; }
+  .adv-list { padding-left: 16px; }
+  .adv-list li { font-size: 12px; color: var(--text-dim); line-height:1.65; margin-bottom:3px; }
 
+  /* Products */
+  .prod-section { padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .prod-cat { font-size:10px; font-weight:600; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+  .prod-grid { display:flex; flex-wrap:wrap; gap:5px; }
+  .prod-chip { padding: 3px 9px; background: var(--surface2); border: 1px solid var(--border); font-size: 11px; color: var(--text-dim); border-radius: 5px; }
+  .prod-chip.affected { background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.2); color: #FCA5A5; }
 
-  /* Panel: Advisory */
-  .adv-block {
-    padding: 12px 14px;
-    border-bottom: 1px solid var(--border);
-  }
-  .adv-title { font-family: var(--font-mono); font-size: 9px; font-weight:700; color: var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-  .adv-text  { font-size: 10.5px; color: var(--text-dim); line-height:1.6; }
-  .adv-section { font-family:var(--font-mono); font-size:8.5px; font-weight:700; color:var(--text); margin:8px 0 4px; text-transform:uppercase; letter-spacing:0.05em; }
-  .adv-list { padding-left: 14px; }
-  .adv-list li { font-size: 10px; color: var(--text-dim); line-height:1.6; margin-bottom:2px; }
-
-  /* Panel: Products */
-  .prod-section { padding: 12px 14px; border-bottom: 1px solid var(--border); }
-  .prod-cat { font-family:var(--font-mono); font-size:8px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
-  .prod-grid { display:flex; flex-wrap:wrap; gap:4px; }
-  .prod-chip {
-    padding: 2px 7px;
-    background: var(--surface2); border: 1px solid var(--border);
-    font-family: var(--font-mono); font-size: 8.5px; color: var(--text-dim);
-    border-radius: 1px;
-  }
-  .prod-chip.affected { background: rgba(224,48,48,0.08); border-color: rgba(224,48,48,0.25); color: #ff8888; }
-
-  /* ── Filters ── */
+  /* Filters */
   #filters {
-    position: absolute; top: 12px; left: 14px; z-index:100;
-    background: rgba(13,17,23,0.95);
+    position: absolute; top: 14px; left: 14px; z-index:700;
+    background: rgba(17,17,17,0.96);
     border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     backdrop-filter: blur(14px);
-    width: 178px;
+    width: 190px; overflow: hidden;
   }
   #filters-hd {
-    padding: 6px 10px;
-    background: var(--surface2);
-    border-bottom: 1px solid var(--border);
-    font-family: var(--font-mono); font-size: 8px;
-    letter-spacing:0.12em; text-transform:uppercase;
-    color: var(--text-dim);
-    display:flex; align-items:center; gap:6px;
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim);
   }
-  #filters-hd::before { content:''; width:3px;height:3px; background:var(--accent); border-radius:50%; }
-  .f-section { padding: 7px 9px; border-bottom: 1px solid var(--border); }
+  .f-section { padding: 8px 10px; border-bottom: 1px solid var(--border); }
   .f-section:last-child { border-bottom:none; }
-  .f-label { font-family:var(--font-mono); font-size:7px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:5px; }
+  .f-label { font-size:9px; color:var(--text-muted); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; font-weight:600; }
   .f-opts  { display:flex; flex-direction:column; gap:2px; }
   .fbtn {
-    display:flex; align-items:center; gap:6px;
-    padding: 4px 6px;
-    background: transparent; border: 1px solid transparent;
-    cursor:pointer; transition: all 0.1s;
-    font-family:var(--font-mono); font-size:9px;
+    display:flex; align-items:center; gap:7px;
+    padding: 5px 7px; background: transparent; border: 1px solid transparent;
+    border-radius: 6px; cursor:pointer; transition: all 0.12s;
+    font-family: var(--font-sans); font-size:12px;
     color: var(--text-dim); text-align:left; width:100%;
   }
-  .fbtn:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
-  .fbtn.active { background: rgba(248,161,0,0.06); border-color: rgba(248,161,0,0.3); color: #f0d080; }
-  .fdot { width:7px;height:7px; border-radius:50%; flex-shrink:0; }
-  .fchk { margin-left:auto; opacity:0; color:var(--accent); font-size:10px; }
+  .fbtn:hover { background: var(--surface2); color: var(--text); }
+  .fbtn.active { background: rgba(163,255,18,0.07); border-color: rgba(163,255,18,0.22); color: var(--accent); }
+  .fdot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .fchk { margin-left:auto; opacity:0; color:var(--accent); font-size:11px; }
   .fbtn.active .fchk { opacity:1; }
 
-  /* ── Tooltip ── */
+  /* Tooltip */
   #tooltip {
     position: fixed; z-index:300; pointer-events:none;
-    opacity:0; transform:translateY(6px);
+    opacity:0; transform:translateY(8px);
     transition: opacity 0.12s, transform 0.12s;
-    min-width: 275px; max-width: 345px;
+    min-width: 280px; max-width: 350px;
   }
   #tooltip.visible { opacity:1; transform:translateY(0); }
   #tooltip.pinned  { pointer-events: auto; }
-  #tooltip .tt-close {
-    position:absolute; top:6px; right:8px;
-    font-size:11px; color:var(--text-dim); cursor:pointer; line-height:1;
-    font-family:var(--font-mono);
-  }
+  #tooltip .tt-close { position:absolute; top:10px; right:12px; font-size:14px; color:var(--text-dim); cursor:pointer; line-height:1; }
   #tooltip .tt-close:hover { color:var(--text); }
   .tt-card {
-    background: #060c12;
-    border: 1px solid var(--border2);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.9), 0 0 0 1px rgba(248,161,0,0.07);
-    overflow: hidden;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8); overflow: hidden;
   }
   .tt-top-bar { height: 3px; background: var(--accent); }
-  .tt-hd { padding: 9px 12px 8px; border-bottom: 1px solid var(--border); background: #0a1018; }
-  .tt-co { font-size: 12px; font-weight:700; color: #e8f2ff; line-height:1.3; }
-  .tt-location { font-family:var(--font-mono); font-size:8.5px; color:var(--accent2); margin-top:2px; }
+  .tt-hd { padding: 12px 14px 10px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .tt-co { font-size: 13px; font-weight:700; color: var(--text); line-height:1.3; }
+  .tt-location { font-size:11px; color:var(--accent2); margin-top:2px; }
   .tt-prod-row { align-items:flex-start; }
   .tt-prod-row .tt-v { white-space:normal; line-height:1.45; }
   .tt-src a { color:var(--accent2); text-decoration:none; }
   .tt-src a:hover { text-decoration:underline; }
-  .tt-bd { padding: 9px 12px; }
-  .tt-row { display:flex; align-items:baseline; gap:8px; margin-bottom:4px; font-family:var(--font-mono); font-size:9px; line-height:1.4; }
+  .tt-bd { padding: 10px 14px; }
+  .tt-row { display:flex; align-items:baseline; gap:8px; margin-bottom:5px; font-size:11px; line-height:1.4; }
   .tt-row:last-child { margin-bottom:0; }
-  .tt-k { color:var(--text-muted); min-width:72px; flex-shrink:0; }
-  .tt-v { color:#b0ccee; font-weight:500; }
-  .tt-hr { height:1px; background:var(--border); margin:5px 0; }
-  .tt-src { padding: 5px 12px; border-top: 1px solid var(--border); background: #040a10; font-family:var(--font-mono); font-size:7.5px; color:var(--text-muted); }
-  .tt-src span { color: var(--accent); }
+  .tt-k { color:var(--text-muted); min-width:76px; flex-shrink:0; font-size:10px; text-transform:uppercase; letter-spacing:0.04em; }
+  .tt-v { color:var(--text-dim); font-weight:500; }
+  .tt-hr { height:1px; background:var(--border); margin:6px 0; }
+  .tt-src { padding: 7px 14px; border-top: 1px solid var(--border); background: var(--bg); font-size:10px; color:var(--text-muted); }
+  .tt-src span { color: var(--accent2); }
 
-  /* ── Legend ── */
-  #legend {
-    position: absolute; bottom: 14px; left: 14px; z-index:100;
-    background: rgba(13,17,23,0.92);
-    border: 1px solid var(--border);
-    padding: 9px 13px;
-    backdrop-filter: blur(10px);
-  }
-  .leg-t { font-family:var(--font-mono); font-size:7px; color:var(--text-muted); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:6px; }
-  .leg-row { display:flex; align-items:center; gap:8px; margin-bottom:4px; font-family:var(--font-mono); font-size:9px; color:var(--text-dim); }
-  .leg-row:last-child { margin-bottom:0; }
-  .leg-dot { width:8px;height:8px; border-radius:50%; flex-shrink:0; }
-
-  /* ── Ticker ── */
-  #ticker-bar {
-    position: fixed; bottom:0; left:0; right:0; z-index:200;
-    height: 28px;
-    display:flex; align-items:center;
-    background: #080b0f;
-    border-top: 1px solid rgba(248,161,0,0.25);
-    overflow: hidden;
-  }
-  #ticker-label {
-    color: var(--accent); font-family:var(--font-mono); font-size:8.5px; font-weight:700;
-    letter-spacing:0.1em; text-transform:uppercase;
-    padding: 0 14px;
-    border-right: 1px solid rgba(248,161,0,0.2);
-    white-space:nowrap; flex-shrink:0;
-    background: rgba(248,161,0,0.06);
-    height:100%; display:flex; align-items:center;
-  }
-  #ticker-track { overflow:hidden; flex:1; height:100%; display:flex; align-items:center; }
-  #ticker-inner { color:var(--text-dim); white-space:nowrap; display:inline-block; font-family:var(--font-mono); font-size:9px; animation: scroll-ticker 90s linear infinite; }
-  @keyframes scroll-ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-  .tick-sep { color: var(--accent); margin: 0 10px; }
-
-  /* ── Loading ── */
+  /* Loading */
   #loading {
     position: fixed; inset:0; z-index:400;
     background: var(--bg);
@@ -426,230 +286,133 @@
     transition: opacity 0.5s;
   }
   #loading.hidden { opacity:0; pointer-events:none; }
-  .ld-hex { width:40px; height:40px; background:var(--accent); clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%); animation:spin 1.8s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
-  .ld-txt { font-family:var(--font-mono); font-size:9px; color:var(--text-dim); letter-spacing:0.14em; text-transform:uppercase; animation:fade-pulse 1.4s ease-in-out infinite; }
-  @keyframes fade-pulse { 0%,100%{opacity:0.3} 50%{opacity:1} }
+  .ld-spinner { width:36px; height:36px; border:3px solid var(--border2); border-top-color: var(--accent); border-radius:50%; animation:spin-ld 0.8s linear infinite; }
+  @keyframes spin-ld { to{transform:rotate(360deg)} }
+  .ld-txt { font-size:12px; color:var(--text-dim); letter-spacing:0.1em; text-transform:uppercase; }
 
-  /* ── Toggle panel btn ── */
+  /* Toggle panel */
   #toggle-panel {
-    position: absolute; top: 12px; right: 14px; z-index:100;
-    background: rgba(13,17,23,0.9); border: 1px solid var(--border);
-    color: var(--text-dim); cursor:pointer;
-    font-family:var(--font-mono); font-size:8px; letter-spacing:0.08em; text-transform:uppercase;
-    padding: 5px 10px;
-    backdrop-filter: blur(8px);
-    transition: all 0.1s;
+    position: absolute; top: 14px; right: 14px; z-index:700;
+    background: rgba(17,17,17,0.96); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text-dim); cursor:pointer;
+    font-family: var(--font-sans); font-size:12px; font-weight:500;
+    padding: 6px 12px; backdrop-filter: blur(14px); transition: all 0.15s;
   }
-  #toggle-panel:hover { color:var(--accent); border-color: rgba(248,161,0,0.4); }
+  #toggle-panel:hover { color:var(--accent); border-color: rgba(163,255,18,0.3); }
 
-  /* scrollbar */
-  ::-webkit-scrollbar { width:5px; height:5px; }
-  ::-webkit-scrollbar-thumb { background:var(--border2); }
+  ::-webkit-scrollbar { width:4px; height:4px; }
+  ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
   ::-webkit-scrollbar-track { background:transparent; }
 
-  /* vignette */
-  #globe-wrap::after {
-    content:''; position:absolute; inset:0; pointer-events:none; z-index:3;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba(10,12,14,0.5) 100%);
-  }
-
-  /* ── Panel search ── */
-  #panel-search-wrap {
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border);
-    flex-shrink:0;
-  }
+  /* Panel search */
+  #panel-search-wrap { padding: 10px 12px; border-bottom: 1px solid var(--border); flex-shrink:0; }
   #panel-search {
-    width:100%; padding: 5px 8px;
-    background: var(--surface3); border: 1px solid var(--border);
-    color: var(--text); font-family:var(--font-mono); font-size:9px;
-    outline: none;
+    width:100%; padding: 7px 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    font-family: var(--font-sans); font-size:12px; outline: none; transition: border-color 0.15s;
   }
-  #panel-search:focus { border-color: var(--accent2); }
+  #panel-search:focus { border-color: var(--accent); }
   #panel-search::placeholder { color: var(--text-muted); }
 
   .section-divider {
-    padding: 5px 14px;
-    background: #080c10;
-    border-bottom: 1px solid var(--border);
-    border-top: 1px solid var(--border);
+    padding: 6px 14px; background: var(--bg);
+    border-bottom: 1px solid var(--border); border-top: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
     position: sticky; top: 0; z-index: 5;
   }
-  .sdiv-label {
-    font-family:var(--font-mono); font-size:7.5px; font-weight:700;
-    letter-spacing:0.12em; text-transform:uppercase;
-  }
-  .sdiv-count {
-    font-family:var(--font-mono); font-size:10px; font-weight:700;
-    background: rgba(255,255,255,0.05);
-    padding: 1px 6px; border-radius:1px;
-  }
+  .sdiv-label { font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+  .sdiv-count { font-size:12px; font-weight:700; background: rgba(255,255,255,0.05); padding: 1px 7px; border-radius:4px; }
 
-  /* ── Add Marker Modal ── */
+  /* Add Marker Modal */
   #am-overlay {
     display: none; position: fixed; inset: 0; z-index: 9000;
-    background: rgba(0,0,0,0.72);
-    backdrop-filter: blur(6px);
+    background: rgba(0,0,0,0.72); backdrop-filter: blur(8px);
     align-items: center; justify-content: center;
   }
   #am-overlay.open { display: flex; }
-
   #am-modal {
-    background: #0d1117;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    width: 520px; max-width: 96vw;
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: var(--radius-lg); width: 520px; max-width: 96vw;
     max-height: 90vh; overflow-y: auto;
-    box-shadow: 0 24px 60px rgba(0,0,0,0.7);
-    animation: amIn 0.18s ease;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.75); animation: amIn 0.18s ease;
   }
-  @keyframes amIn {
-    from { opacity:0; transform: translateY(-12px) scale(0.97); }
-    to   { opacity:1; transform: none; }
-  }
-
+  @keyframes amIn { from{opacity:0;transform:translateY(-10px) scale(0.98)} to{opacity:1;transform:none} }
   #am-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 16px 20px 12px;
-    border-bottom: 1px solid var(--border);
+    padding: 18px 22px 14px; border-bottom: 1px solid var(--border);
   }
-  #am-title {
-    font-family: var(--font-mono); font-size: 11px; font-weight: 700;
-    letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
-  }
-  #am-close {
-    background: none; border: none; cursor: pointer; color: var(--text-dim);
-    font-size: 18px; line-height:1; padding: 2px 4px;
-    transition: color 0.1s;
-  }
+  #am-title { font-size: 15px; font-weight: 700; color: var(--text); }
+  #am-close { background: none; border: none; cursor: pointer; color: var(--text-dim); font-size: 20px; line-height:1; padding: 2px 4px; transition: color 0.1s; }
   #am-close:hover { color: var(--text); }
-
-  #am-body {
-    padding: 18px 20px 8px;
-    display: flex; flex-direction: column; gap: 14px;
-  }
-
+  #am-body { padding: 20px 22px 10px; display: flex; flex-direction: column; gap: 14px; }
   .am-row { display: flex; gap: 12px; }
-  .am-field { display: flex; flex-direction: column; gap: 5px; flex: 1; }
-  .am-label {
-    font-family: var(--font-mono); font-size: 8.5px; font-weight: 600;
-    letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-dim);
-  }
+  .am-field { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .am-label { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-dim); }
   .am-label span.req { color: var(--accent); margin-left: 2px; }
   .am-input, .am-select, .am-textarea {
-    background: #161b22;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    color: var(--text);
-    font-family: var(--font-sans); font-size: 12px;
-    padding: 7px 10px;
-    outline: none;
-    transition: border-color 0.15s;
-    width: 100%; box-sizing: border-box;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text); font-family: var(--font-sans); font-size: 13px;
+    padding: 8px 11px; outline: none; transition: border-color 0.15s; width: 100%;
   }
-  .am-input:focus, .am-select:focus, .am-textarea:focus {
-    border-color: var(--accent);
-  }
+  .am-input:focus, .am-select:focus, .am-textarea:focus { border-color: var(--accent); }
   .am-select { appearance: none; cursor: pointer; }
-  .am-textarea { resize: vertical; min-height: 58px; }
-
-  /* Intensity dots selector */
-  #am-intensity-row {
-    display: flex; align-items: center; gap: 10px;
-  }
-  .am-dot-btn {
-    background: none; border: none; cursor: pointer;
-    font-size: 18px; padding: 0 2px;
-    transition: transform 0.1s;
-    line-height: 1;
-  }
+  .am-textarea { resize: vertical; min-height: 60px; }
+  #am-intensity-row { display: flex; align-items: center; gap: 10px; }
+  .am-dot-btn { background: none; border: none; cursor: pointer; font-size: 20px; padding: 0 2px; transition: transform 0.1s; line-height: 1; }
   .am-dot-btn:hover { transform: scale(1.3); }
-  #am-intensity-label {
-    font-family: var(--font-mono); font-size: 9px;
-    color: var(--text-dim); margin-left: 4px;
-  }
-
-  /* Product chips */
-  #am-product-chips {
-    display: flex; flex-wrap: wrap; gap: 5px; min-height: 20px;
-  }
+  #am-intensity-label { font-size: 11px; color: var(--text-dim); margin-left: 4px; }
+  #am-product-chips { display: flex; flex-wrap: wrap; gap: 5px; min-height: 22px; }
   .am-prod-chip {
     display: flex; align-items: center; gap: 4px;
-    background: rgba(0,160,200,0.12);
-    border: 1px solid rgba(0,160,200,0.3);
-    border-radius: 3px;
-    padding: 2px 7px 2px 8px;
-    font-family: var(--font-mono); font-size: 9px; color: #00c8e8;
+    background: rgba(96,165,250,0.1); border: 1px solid rgba(96,165,250,0.25);
+    border-radius: 5px; padding: 3px 8px 3px 9px; font-size: 11px; color: #93C5FD;
   }
-  .am-prod-chip button {
-    background: none; border: none; cursor: pointer;
-    color: rgba(0,200,232,0.5); font-size: 11px; padding: 0; line-height:1;
-  }
-  .am-prod-chip button:hover { color: #ff5555; }
-  #am-prod-input-wrap { display: flex; gap: 6px; }
+  .am-prod-chip button { background: none; border: none; cursor: pointer; color: rgba(147,197,253,0.5); font-size: 13px; padding: 0; line-height:1; }
+  .am-prod-chip button:hover { color: var(--red); }
+  #am-prod-input-wrap { display: flex; gap: 7px; }
   #am-prod-input-wrap .am-input { flex: 1; }
   #am-prod-add {
-    background: var(--accent); color: #000;
-    border: none; border-radius: 5px; cursor: pointer;
-    font-family: var(--font-mono); font-size: 9px; font-weight: 700;
-    padding: 0 12px; letter-spacing: 0.06em; white-space: nowrap;
-    transition: opacity 0.1s;
+    background: var(--accent); color: #000; border: none; border-radius: var(--radius);
+    cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 700;
+    padding: 0 14px; white-space: nowrap; transition: opacity 0.1s;
   }
   #am-prod-add:hover { opacity: 0.85; }
-
-  /* Coords hint */
-  .am-coords-hint {
-    font-family: var(--font-mono); font-size: 8px; color: var(--text-dim);
-    margin-top: 2px;
-  }
-
-  /* Footer */
+  .am-coords-hint { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
   #am-footer {
     display: flex; gap: 10px; justify-content: flex-end;
-    padding: 14px 20px 18px;
-    border-top: 1px solid var(--border);
-    margin-top: 4px;
+    padding: 16px 22px 20px; border-top: 1px solid var(--border); margin-top: 4px;
   }
   #am-cancel {
-    background: transparent; border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text-dim);
-    cursor: pointer; font-family: var(--font-mono); font-size: 9px;
-    font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 8px 18px; transition: all 0.1s;
+    background: transparent; border: 1px solid var(--border); border-radius: var(--radius);
+    color: var(--text-dim); cursor: pointer; font-family: var(--font-sans); font-size: 12px;
+    font-weight: 600; padding: 9px 18px; transition: all 0.15s;
   }
-  #am-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+  #am-cancel:hover { border-color: var(--border2); color: var(--text); }
   #am-submit {
-    background: var(--accent); color: #000;
-    border: none; border-radius: 6px;
-    cursor: pointer; font-family: var(--font-mono); font-size: 9px;
-    font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-    padding: 8px 22px; transition: opacity 0.1s;
+    background: var(--accent); color: #000; border: none; border-radius: var(--radius);
+    cursor: pointer; font-family: var(--font-sans); font-size: 12px; font-weight: 700;
+    padding: 9px 22px; transition: opacity 0.1s;
   }
   #am-submit:hover { opacity: 0.85; }
   #am-submit:disabled { opacity: 0.4; cursor: not-allowed; }
 
-  /* Right-click hint on globe */
   #rc-hint {
-    position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
-    background: rgba(13,17,23,0.85);
-    border: 1px solid var(--border);
-    border-radius: 4px; padding: 4px 10px;
-    font-family: var(--font-mono); font-size: 8px; color: var(--text-dim);
+    position: absolute; bottom: 46px; left: 50%; transform: translateX(-50%);
+    background: rgba(17,17,17,0.92); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 5px 12px;
+    font-size: 11px; color: var(--text-dim);
     pointer-events: none; white-space: nowrap;
-    opacity: 0; transition: opacity 0.4s;
-    z-index: 50;
+    opacity: 0; transition: opacity 0.4s; z-index: 50;
   }
   #rc-hint.show { opacity: 1; }
-
 </style>
 </head>
 <body>
 
 <div id="loading">
-  <div class="ld-hex"></div>
-  <div class="ld-txt">Loading crisis intelligence…</div>
+  <div class="ld-spinner"></div>
+  <div class="ld-txt">Loading disruption data…</div>
 </div>
 
 <!-- ── HEADER ── -->
@@ -658,47 +421,18 @@
     <div id="logo-mark"></div>
     <div>
       <div id="app-name">Disruption Tracker</div>
-      <div id="app-tag">VALDERA · Live Tracker</div>
+      <div id="app-tag">Valdera · Live</div>
     </div>
   </div>
-
-  <div id="header-stats">
-    <div class="hstat">
-      <div class="hstat-num red" id="cnt-sd">0</div>
-      <div class="hstat-lbl">Force Majeure</div>
-    </div>
-    <div class="hstat">
-      <div class="hstat-num yellow" id="cnt-rd">0</div>
-      <div class="hstat-lbl">Reduced</div>
-    </div>
-    <div class="hstat">
-      <div class="hstat-num blue" id="cnt-mt">0</div>
-      <div class="hstat-lbl">Monitoring</div>
-    </div>
-    <div class="hstat">
-      <div class="hstat-num" style="color:var(--text-dim)" id="cnt-total">0</div>
-      <div class="hstat-lbl">Total Events</div>
-    </div>
-  </div>
-
   <div id="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('globe')">Globe</button>
+    <button class="tab-btn active" onclick="switchTab('globe')">Map</button>
     <button class="tab-btn" onclick="switchTab('products')">Products at Risk</button>
-  </div>
-
-  <div id="header-right">
-    <div id="crisis-badge">
-      <div class="live-dot blinking"></div>
-      2026 US–Iran War · Hormuz Closed
-    </div>
-    <div id="upd-wrap">UPDATED <span id="upd-time">—</span></div>
+    <button class="tab-btn" onclick="window.open('https://disruptions-vc.vercel.app/','_blank')">Value chains</button>
   </div>
 </div>
 
 <!-- ── APP BODY ── -->
 <div id="app-body">
-
-  <!-- Globe view -->
   <div id="globe-wrap">
     <div id="globeViz"></div>
 
@@ -708,19 +442,19 @@
         <div class="f-label">Status</div>
         <div class="f-opts">
           <button class="fbtn active" data-f="status" data-v="all">
-            <span class="fdot" style="background:#4a6a80"></span>All<span class="fchk">✓</span>
-          </button>
-          <button class="fbtn" data-f="status" data-v="Maintenance">
-            <span class="fdot" style="background:#f5c842"></span>Maintenance Shutdown<span class="fchk">✓</span>
+            <span class="fdot" style="background:#555"></span>All<span class="fchk">✓</span>
           </button>
           <button class="fbtn" data-f="status" data-v="Shutdown">
-            <span class="fdot" style="background:#8b0000"></span>Force Majeure<span class="fchk">✓</span>
+            <span class="fdot" style="background:#EF4444"></span>Force Majeure<span class="fchk">✓</span>
+          </button>
+          <button class="fbtn" data-f="status" data-v="Maintenance">
+            <span class="fdot" style="background:#F59E0B"></span>Maintenance<span class="fchk">✓</span>
           </button>
           <button class="fbtn" data-f="status" data-v="Reduced">
-            <span class="fdot" style="background:#ff6600"></span>Reduced Rates<span class="fchk">✓</span>
+            <span class="fdot" style="background:#F97316"></span>Reduced Rates<span class="fchk">✓</span>
           </button>
           <button class="fbtn" data-f="status" data-v="Monitoring">
-            <span class="fdot" style="background:#00e5ff"></span>Monitoring/Alert<span class="fchk">✓</span>
+            <span class="fdot" style="background:#3B82F6"></span>Monitoring<span class="fchk">✓</span>
           </button>
         </div>
       </div>
@@ -728,35 +462,26 @@
         <div class="f-label">Impact</div>
         <div class="f-opts">
           <button class="fbtn active" data-f="impact" data-v="all">
-            <span class="fdot" style="background:#4a6a80"></span>All<span class="fchk">✓</span>
+            <span class="fdot" style="background:#555"></span>All<span class="fchk">✓</span>
           </button>
           <button class="fbtn" data-f="impact" data-v="High">
-            <span class="fdot" style="background:#ff6666"></span>High<span class="fchk">✓</span>
+            <span class="fdot" style="width:12px;height:12px;background:#aaa"></span>High<span class="fchk">✓</span>
           </button>
           <button class="fbtn" data-f="impact" data-v="Medium">
-            <span class="fdot" style="background:#f5c050"></span>Medium<span class="fchk">✓</span>
+            <span class="fdot" style="width:9px;height:9px;background:#aaa"></span>Medium<span class="fchk">✓</span>
           </button>
           <button class="fbtn" data-f="impact" data-v="Low">
-            <span class="fdot" style="background:#5ec9ff"></span>Low<span class="fchk">✓</span>
+            <span class="fdot" style="width:6px;height:6px;background:#aaa"></span>Low<span class="fchk">✓</span>
           </button>
         </div>
       </div>
     </div>
 
-    <div id="legend">
-      <div class="leg-t">Marker Key</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#f5c842;box-shadow:0 0 7px #f5c842"></div>Maintenance Shutdown</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#8b0000;box-shadow:0 0 7px #8b0000"></div>Force Majeure</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#ff6600;box-shadow:0 0 7px #ff6600"></div>Reduced Rates</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#00e5ff;box-shadow:0 0 7px #00e5ff"></div>Monitoring / Alert</div>
-    </div>
 
     <button id="toggle-panel" onclick="togglePanel()">◀ Panel</button>
   </div>
 
-  <!-- Side panel -->
   <div id="side-panel">
-    <!-- panel-tabs hidden: single Disruptions tab -->
     <div id="panel-search-wrap">
       <input id="panel-search" type="text" placeholder="Search company, country, product…" oninput="filterPanel()"/>
     </div>
@@ -790,41 +515,7 @@
   </div>
 </div>
 
-<!-- ── TICKER ── -->
-<div id="ticker-bar">
-  <div id="ticker-label">⚑ Breaking</div>
-  <div id="ticker-track">
-    <span id="ticker-inner">
-      QatarEnergy force majeure — Ras Laffan entire LNG output halted after Iranian missile strikes <span class="tick-sep">·</span>
-      Saudi Aramco shuts Ras Tanura refinery (550k bpd) after drone strike <span class="tick-sep">·</span>
-      Strait of Hormuz: 90%+ reduction in vessel transits — UKMTO <span class="tick-sep">·</span>
-      Brent crude +13% to ~$82/bbl; European natural gas surges 39% in single day <span class="tick-sep">·</span>
-      ADNOC Ruwais refinery (922k bpd) shut after drone-linked fire <span class="tick-sep">·</span>
-      PT Chandra Asri Pacific (Indonesia) declares force majeure — naphtha feedstock disruption <span class="tick-sep">·</span>
-      YNCC (South Korea) declares force majeure — Hormuz closure hits cracker feedstocks <span class="tick-sep">·</span>
-      Mitsui Chemicals (Japan) cuts output amid Iran crisis — Reuters, 10 Mar 2026 <span class="tick-sep">·</span>
-      Formosa Plastics force majeure on oil products — Middle East crude shipments run short <span class="tick-sep">·</span>
-      LG Chem &amp; Lotte Chemical alert on force majeure possibility — Korea Times, 13 Mar 2026 <span class="tick-sep">·</span>
-      Sadara Chemical (Aramco/Dow JV) temporarily shuts Jubail complex — Arab News, 31 Mar 2026 <span class="tick-sep">·</span>
-      Dow CEO: Iran war to keep petrochemical prices high through end of 2026 — Fortune, 27 Mar 2026 <span class="tick-sep">·</span>
-      SABIC force majeure aggravates global chemicals shortage — ICIS, 30 Mar 2026 <span class="tick-sep">·</span>
-      Lanxess raises chemical prices to counter Iran war effects — Reuters, 19 Mar 2026 <span class="tick-sep">·</span>
-      Balaji Amines halts plants — ammonia shortage from Middle East war <span class="tick-sep">·</span>
-      Alkyl Amines declares force majeure, suspends production at 3 facilities — LNG disruption <span class="tick-sep">·</span>
-      Tanker freight rates surge up to 460% on Persian Gulf routes <span class="tick-sep">·</span>
-      Maersk, MSC, CMA CGM, Hapag-Lloyd, COSCO suspend Gulf sailings <span class="tick-sep">·</span>
-      Korea petrochemical operating rates plunge to 60% — Asia Business Daily, 19 Mar 2026 <span class="tick-sep">·</span>
-      Fitch: Prolonged Hormuz closure will constrain chemical production globally — 25 Mar 2026 <span class="tick-sep">·</span>
-      QatarEnergy force majeure — Ras Laffan entire LNG output halted after Iranian missile strikes <span class="tick-sep">·</span>
-      Saudi Aramco shuts Ras Tanura refinery (550k bpd) after drone strike <span class="tick-sep">·</span>
-      Strait of Hormuz: 90%+ reduction in vessel transits — UKMTO <span class="tick-sep">·</span>
-      Brent crude +13% to ~$82/bbl; European natural gas surges 39% in single day <span class="tick-sep">·</span>
-    </span>
-  </div>
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/globe.gl@2.27.2/dist/globe.gl.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA — 2026 Middle East / Hormuz Crisis
@@ -1262,25 +953,6 @@ const DISRUPTIONS = [
     impact:"Medium", confidence:"Likely",
     source:"https://www.cnbc.com/2026/03/20/oil-wti-brent-us-weighs-releasing-sanctioned-iranian-crude.html"
   },
-  ];
-
-// ── FORCE MAJEURE DECLARATIONS ──
-const FM_DATA = [
-  { company:"QatarEnergy", country:"Qatar", product:"LNG / entire export output", date:"2026-03-04", source:"Reuters" },
-  { company:"PT Chandra Asri Pacific (TPIA)", country:"Indonesia", product:"Naphtha cracker — PE/PP", date:"2026-03-04", source:"ICIS" },
-  { company:"YNCC", country:"South Korea", product:"Naphtha cracker ethylene/propylene", date:"2026-03-05", source:"ICIS" },
-  { company:"Petronet LNG", country:"India", product:"LNG imports — Dahej terminal", date:"2026-03-03", source:"Petronet press release" },
-  { company:"Formosa Chemicals / Formosa Plastics", country:"Taiwan", product:"Oil products, PTA, PA6, PP", date:"2026-03-10", source:"TradeWinds / Taiwan News" },
-  { company:"Mitsui Chemicals", country:"Japan", product:"Multiple — output cuts declared", date:"2026-03-10", source:"Reuters" },
-  { company:"LG Chem", country:"South Korea", product:"Naphtha feedstock alert", date:"2026-03-11", source:"Chosun Daily" },
-  { company:"Lotte Chemical", country:"South Korea", product:"PE/PP/MEG alert", date:"2026-03-11", source:"Korea Times" },
-  { company:"Balaji Amines", country:"India", product:"Methylamines/Ethylamines — ammonia shortage", date:"2026-03-12", source:"Indian Chemical News" },
-  { company:"Alkyl Amines Chemicals", country:"India", product:"Methylamines/Ethylamines — 3 plants", date:"2026-03-14", source:"ScanX Trade" },
-  { company:"LyondellBasell", country:"Europe", product:"Polyolefins — commercial FM", date:"2026-03-15", source:"Argus Media" },
-  { company:"Sadara Chemical (Aramco–Dow JV)", country:"Saudi Arabia", product:"Specialty chemicals — Jubail complex", date:"2026-03-31", source:"Arab News" },
-  { company:"SABIC", country:"Saudi Arabia", product:"Multiple chemicals — global shortage", date:"2026-03-30", source:"ICIS" },
-  { company:"Sinopec CPDC", country:"China", product:"Ethylene, PTA, PA6", date:"2026-03-25", source:"Chemnet" },
-  { company:"Bapco Energies", country:"Bahrain", product:"Sitra Refinery — all products", date:"2026-03-09", source:"Reuters" },
   {
     id:81, company:"INEOS Oxide — Antwerp Plant", country:"Belgium",
     lat:51.2194, lng:4.3758,
@@ -1434,26 +1106,40 @@ const FM_DATA = [
 
 ];
 
+// ── FORCE MAJEURE DECLARATIONS ──
+const FM_DATA = [
+  { company:"QatarEnergy", country:"Qatar", product:"LNG / entire export output", date:"2026-03-04", source:"Reuters" },
+  { company:"PT Chandra Asri Pacific (TPIA)", country:"Indonesia", product:"Naphtha cracker — PE/PP", date:"2026-03-04", source:"ICIS" },
+  { company:"YNCC", country:"South Korea", product:"Naphtha cracker ethylene/propylene", date:"2026-03-05", source:"ICIS" },
+  { company:"Petronet LNG", country:"India", product:"LNG imports — Dahej terminal", date:"2026-03-03", source:"Petronet press release" },
+  { company:"Formosa Chemicals / Formosa Plastics", country:"Taiwan", product:"Oil products, PTA, PA6, PP", date:"2026-03-10", source:"TradeWinds / Taiwan News" },
+  { company:"Mitsui Chemicals", country:"Japan", product:"Multiple — output cuts declared", date:"2026-03-10", source:"Reuters" },
+  { company:"LG Chem", country:"South Korea", product:"Naphtha feedstock alert", date:"2026-03-11", source:"Chosun Daily" },
+  { company:"Lotte Chemical", country:"South Korea", product:"PE/PP/MEG alert", date:"2026-03-11", source:"Korea Times" },
+  { company:"Balaji Amines", country:"India", product:"Methylamines/Ethylamines — ammonia shortage", date:"2026-03-12", source:"Indian Chemical News" },
+  { company:"Alkyl Amines Chemicals", country:"India", product:"Methylamines/Ethylamines — 3 plants", date:"2026-03-14", source:"ScanX Trade" },
+  { company:"LyondellBasell", country:"Europe", product:"Polyolefins — commercial FM", date:"2026-03-15", source:"Argus Media" },
+  { company:"Sadara Chemical (Aramco–Dow JV)", country:"Saudi Arabia", product:"Specialty chemicals — Jubail complex", date:"2026-03-31", source:"Arab News" },
+  { company:"SABIC", country:"Saudi Arabia", product:"Multiple chemicals — global shortage", date:"2026-03-30", source:"ICIS" },
+  { company:"Sinopec CPDC", country:"China", product:"Ethylene, PTA, PA6", date:"2026-03-25", source:"Chemnet" },
+  { company:"Bapco Energies", country:"Bahrain", product:"Sitra Refinery — all products", date:"2026-03-09", source:"Reuters" },
+];
+
 // ── STATE ──
-let globe, rotTimer;
+let map, markersLayer;
 let filters = { status:'all', impact:'all' };
 let panelTab = 'disruptions';
 let panelCollapsed = false;
 let searchQuery = '';
 let selectedId = null;
-let tipPinned = false;   // true = tooltip locked in place (from click)
+let tipPinned = false;
 
-// ── COLLISION SPREAD: nudge markers that are too close together ──
-// Runs once at startup so every marker is always visually distinguishable,
-// even when zoomed out. Uses iterative repulsion (like a mini force-layout).
+// ── COLLISION SPREAD ──
 (function spreadMarkers() {
-  const MIN_SEP = 0.6;   // minimum degrees of separation (lat/lng Euclidean)
-  const ITERS   = 40;    // repulsion iterations
-  const FORCE   = 0.20;  // repulsion strength per iteration
-
-  // Work on mutable copies; preserve originals for tooltip display
+  const MIN_SEP = 0.6;
+  const ITERS   = 40;
+  const FORCE   = 0.20;
   DISRUPTIONS.forEach(d => { d._lat = d.lat; d._lng = d.lng; });
-
   for (let iter = 0; iter < ITERS; iter++) {
     for (let i = 0; i < DISRUPTIONS.length; i++) {
       let fx = 0, fy = 0;
@@ -1472,85 +1158,130 @@ let tipPinned = false;   // true = tooltip locked in place (from click)
       DISRUPTIONS[i]._lng += fy;
     }
   }
-
-  // Apply spread coordinates to the objects used by the globe
   DISRUPTIONS.forEach(d => { d.lat = d._lat; d.lng = d._lng; });
 })();
 
-// ── INIT GLOBE ──
-function initGlobe() {
-  const el = document.getElementById('globeViz');
-  globe = Globe()(el)
-    .width(el.clientWidth).height(el.clientHeight)
-    .backgroundColor('#0a0c0e')
-    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
-    .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
-    .atmosphereColor('#1a4a8a')
-    .atmosphereAltitude(0.12)
-    .pointsData([])
-    .pointLat(d => d.lat)
-    .pointLng(d => d.lng)
-    .pointAltitude(d => {
-      // Stagger altitudes by status so overlapping markers never z-fight
-      if (d.id === 30) return 0.06;
-      if (d.status === 'Shutdown')    return 0.035;
-      if (d.status === 'Maintenance') return 0.028;
-      if (d.status === 'Reduced')     return 0.021;
-      return 0.014;
-    })
-    .pointRadius(d => d.id === selectedId ? 1.05 : d.impact === 'High' ? 0.72 : d.impact === 'Medium' ? 0.52 : 0.38)
-    .pointColor(d => markerColor(d.status, d.id === selectedId))
-    .pointResolution(6)
-    .onPointClick(onClick)
-    .pointsMerge(false);
-
-  globe.pointOfView({ lat:25, lng:52, altitude:1.8 }, 0);
-  globe.controls().autoRotate      = true;
-  globe.controls().autoRotateSpeed = 0.12;
-  globe.controls().enableZoom      = true;
-  globe.controls().zoomSpeed       = 0.6;
-  globe.controls().minDistance     = 130;
-  globe.controls().maxDistance     = 850;
-
-  // Only pause auto-rotation when user actually drags (not on clicks)
-  let _dragStarted = false;
-  el.addEventListener('mousedown', () => { _dragStarted = false; });
-  el.addEventListener('mousemove', e => {
-    if (e.buttons === 1 && !_dragStarted) { _dragStarted = true; pauseRot(); }
+// ── INIT MAP (Leaflet 2D) ──
+function initMap() {
+  map = L.map('globeViz', {
+    center: [25, 52],
+    zoom: 4,
+    minZoom: 2,
+    maxZoom: 18,
+    zoomControl: false,
+    attributionControl: false,
+    worldCopyJump: false,
+    maxBounds: [[-90, -180], [90, 180]],
+    maxBoundsViscosity: 1.0,
   });
-  el.addEventListener('touchstart', pauseRot, { passive:true });
-  window.addEventListener('resize', () => globe.width(el.clientWidth).height(el.clientHeight));
 
-  const scene = globe.scene();
-  scene.add(new THREE.AmbientLight(0x152535, 2.5));
-  const sun = new THREE.DirectionalLight(0xfff0d0, 1.0);
-  sun.position.set(2, 1, 1); scene.add(sun);
-  const fill = new THREE.DirectionalLight(0x1a3060, 0.3);
-  fill.position.set(-1,-0.5,-1); scene.add(fill);
+  // CartoDB dark base (no labels)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    noWrap: true,
+  }).addTo(map);
+
+  // Labels in a custom pane above markers
+  map.createPane('labelsPane');
+  map.getPane('labelsPane').style.zIndex = 650;
+  map.getPane('labelsPane').style.pointerEvents = 'none';
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    noWrap: true,
+    pane: 'labelsPane',
+  }).addTo(map);
+
+  // Zoom control bottom-right
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  // Attribution bottom-left
+  L.control.attribution({ position: 'bottomleft', prefix: false })
+    .addAttribution('© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/attributions">CARTO</a>')
+    .addTo(map);
+
+  markersLayer = L.layerGroup().addTo(map);
+
+  // Right-click to add marker
+  map.on('contextmenu', function(e) {
+    openAddMarker(e.latlng.lat, e.latlng.lng);
+  });
+
+  window.addEventListener('resize', () => map.invalidateSize());
 }
 
-function pauseRot() {
-  globe.controls().autoRotate = false;
-  clearTimeout(rotTimer);
-  rotTimer = setTimeout(() => globe.controls().autoRotate = true, 6000);
+// ── MARKER COLOR (status → color) ──
+function markerColor(s) {
+  if (s === 'Shutdown')    return '#EF4444'; // red
+  if (s === 'Maintenance') return '#F59E0B'; // amber
+  if (s === 'Reduced')     return '#F97316'; // orange
+  return '#3B82F6';                           // blue (Monitoring)
 }
 
-function markerColor(s, isSelected) {
-  if (isSelected) return '#ffffff';   // selected marker turns white
-  if (s === 'Shutdown')    return '#cc1111';
-  if (s === 'Maintenance') return '#f5c842';
-  if (s === 'Reduced')     return '#ff6600';
-  return '#00e5ff';
+// ── RENDER MAP ──
+function getVisible() {
+  return DISRUPTIONS.filter(d => {
+    if (filters.status !== 'all' && d.status !== filters.status) return false;
+    if (filters.impact !== 'all' && d.impact !== filters.impact) return false;
+    return true;
+  });
+}
+
+function renderMap() {
+  if (!map) return;
+  markersLayer.clearLayers();
+  const visible = getVisible();
+  visible.forEach(d => {
+    const color  = markerColor(d.status);
+    const radius = d.impact === 'High' ? 10 : d.impact === 'Medium' ? 7 : 5;
+    const isSelected = d.id === selectedId;
+
+    const circle = L.circleMarker([d.lat, d.lng], {
+      radius:      isSelected ? radius + 3 : radius,
+      fillColor:   color,
+      color:       isSelected ? '#ffffff' : 'rgba(0,0,0,0.35)',
+      weight:      isSelected ? 2 : 1,
+      opacity:     1,
+      fillOpacity: isSelected ? 1.0 : 0.82,
+    });
+
+    circle.on('mouseover', function(e) {
+      if (tipPinned) return;
+      populateTip(d);
+      moveTip(e.originalEvent.clientX, e.originalEvent.clientY);
+      tip.classList.add('visible');
+    });
+    circle.on('mousemove', function(e) {
+      if (tipPinned) return;
+      moveTip(e.originalEvent.clientX, e.originalEvent.clientY);
+    });
+    circle.on('mouseout', function() {
+      if (!tipPinned) tip.classList.remove('visible');
+    });
+    circle.on('click', function(e) {
+      L.DomEvent.stopPropagation(e);
+      selectedId = d.id;
+      pinTip(d, e.originalEvent.clientX, e.originalEvent.clientY);
+      setTimeout(() => {
+        if (panelTab !== 'disruptions') switchPanelTab('disruptions');
+        else renderDisruptions();
+        setTimeout(() => {
+          const el = document.querySelector(`.dis-item[data-id="${d.id}"]`);
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 80);
+      }, 0);
+    });
+
+    markersLayer.addLayer(circle);
+  });
 }
 
 // ── TOOLTIP ──
 const tip = document.getElementById('tooltip');
 
-// ── TOOLTIP HELPERS ──
 function getIntensityScore(d) {
   if (d.impact === 'High')   return d.status === 'Shutdown' ? 5 : 4;
   if (d.impact === 'Medium') return d.status === 'Shutdown' ? 3 : d.status === 'Reduced' ? 3 : 2;
-  return 1; // Low
+  return 1;
 }
 
 function renderDots(score) {
@@ -1578,7 +1309,6 @@ function getLocationStr(d) {
   return facility ? `${facility}, ${d.country}` : d.country;
 }
 
-// Fill tooltip DOM with disruption data
 function populateTip(d) {
   document.getElementById('tt-co').textContent       = getDisplayName(d);
   document.getElementById('tt-location').textContent = getLocationStr(d);
@@ -1631,65 +1361,10 @@ function pinTip(d, x, y) {
   populateTip(d);
   moveTip(x, y);
   tip.classList.add('visible', 'pinned');
-  tip.style.outline = '1px solid rgba(248,161,0,0.4)';
+  tip.style.outline = '1px solid rgba(163,255,18,0.35)';
 }
 
-// Hover tooltip via plain mousemove — no Globe.gl raycasting involved
-let _hoverThrottle = null;
-document.getElementById('globeViz').addEventListener('mousemove', e => {
-  if (tipPinned) return;
-  if (_hoverThrottle) return;
-  _hoverThrottle = requestAnimationFrame(() => {
-    _hoverThrottle = null;
-    if (tipPinned || !globe) return;
-
-    const visible = getVisible();
-    let best = null, bestDist = Infinity;
-
-    // Primary: try globe surface coords (works when cursor is on the globe surface)
-    const coords = globe.toGlobeCoords(e.clientX, e.clientY);
-    if (coords) {
-      const threshold = 1.8;
-      for (const d of visible) {
-        const dlat = d.lat - coords.lat;
-        const dlng = d.lng - coords.lng;
-        const dist = Math.sqrt(dlat*dlat + dlng*dlng);
-        if (dist < threshold && dist < bestDist) { bestDist = dist; best = d; }
-      }
-    }
-
-    // Fallback: screen-space distance to projected marker positions
-    // Handles elevated markers (pointAltitude > 0) where toGlobeCoords returns null
-    if (!best) {
-      const el = document.getElementById('globeViz');
-      const rect = el.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      const screenThreshold = 18; // px
-      for (const d of visible) {
-        const sc = globe.getScreenCoords(d.lat, d.lng, d.status === 'Shutdown' ? 0.035 : d.status === 'Maintenance' ? 0.028 : d.status === 'Reduced' ? 0.021 : 0.014);
-        if (!sc) continue;
-        const dx = sc.x - mx, dy = sc.y - my;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist < screenThreshold && dist < bestDist) { bestDist = dist; best = d; }
-      }
-    }
-
-    if (best) {
-      populateTip(best);
-      moveTip(e.clientX, e.clientY);
-      tip.classList.add('visible');
-    } else {
-      tip.classList.remove('visible');
-    }
-  });
-}, { passive: true });
-
-document.getElementById('globeViz').addEventListener('mouseleave', () => {
-  if (!tipPinned) tip.classList.remove('visible');
-});
-
-// Click anywhere outside the tooltip closes it
+// Click outside tooltip closes it
 let _justPinned = false;
 document.addEventListener('click', e => {
   if (_justPinned) { _justPinned = false; return; }
@@ -1700,47 +1375,16 @@ document.addEventListener('click', e => {
   }
 });
 
-// Globe click — pin tooltip, highlight panel item
-function onClick(pt, evt) {
-  if (!pt) {
-    // Clicked empty space — unpin & deselect
-    unpinTip();
-    selectedId = null;
-    setTimeout(() => renderPanel(), 0);
-    return;
-  }
-  selectedId = pt.id;
-  pinTip(pt, evt.clientX, evt.clientY);
-  // Switch panel to disruptions and scroll — deferred so we don't block globe's event handler
-  setTimeout(() => {
-    if (panelTab !== 'disruptions') switchPanelTab('disruptions');
-    else renderDisruptions();
-    setTimeout(() => {
-      const el = document.querySelector(`.dis-item[data-id="${pt.id}"]`);
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 80);
-  }, 0);
-}
-
-// ── RENDER GLOBE ──
-function getVisible() {
-  return DISRUPTIONS.filter(d => {
-    if (filters.status !== 'all' && d.status !== filters.status) return false;
-    if (filters.impact !== 'all' && d.impact !== filters.impact) return false;
-    return true;
-  });
-}
-function renderGlobe() {
-  if (!globe) return;
-  globe.pointsData(getVisible());
-}
-
 // ── RENDER STATS ──
 function renderStats() {
-  document.getElementById('cnt-sd').textContent = DISRUPTIONS.filter(d=>d.status==='Shutdown'||d.status==='Maintenance').length;
-  document.getElementById('cnt-rd').textContent = DISRUPTIONS.filter(d=>d.status==='Reduced').length;
-  document.getElementById('cnt-mt').textContent = DISRUPTIONS.filter(d=>d.status==='Monitoring').length;
-  document.getElementById('cnt-total').textContent = DISRUPTIONS.length;
+  const sd = document.getElementById('cnt-sd');
+  const rd = document.getElementById('cnt-rd');
+  const mt = document.getElementById('cnt-mt');
+  const tot = document.getElementById('cnt-total');
+  if (sd)  sd.textContent  = DISRUPTIONS.filter(d=>d.status==='Shutdown'||d.status==='Maintenance').length;
+  if (rd)  rd.textContent  = DISRUPTIONS.filter(d=>d.status==='Reduced').length;
+  if (mt)  mt.textContent  = DISRUPTIONS.filter(d=>d.status==='Monitoring').length;
+  if (tot) tot.textContent = DISRUPTIONS.length;
 }
 
 // ── FILTERS ──
@@ -1749,8 +1393,13 @@ document.querySelectorAll('.fbtn').forEach(btn => {
     const f=btn.dataset.f, v=btn.dataset.v;
     filters[f]=v;
     document.querySelectorAll(`.fbtn[data-f="${f}"]`).forEach(b=>b.classList.toggle('active',b.dataset.v===v));
-    renderGlobe();
-    renderDisruptions();
+    renderMap();
+    // Respect whichever top-level tab is active — never force-switch to events
+    if (panelTab === 'products') {
+      renderProductsPanel();
+    } else {
+      renderPanel();
+    }
   });
 });
 
@@ -1789,16 +1438,14 @@ function renderDisruptions() {
   const reduced     = items.filter(d=>d.status==='Reduced');
   const monitoring  = items.filter(d=>d.status==='Monitoring');
 
-  // ── Summary stats bar ──
   const total = DISRUPTIONS.length;
   const sumEl = document.getElementById('panel-summary');
   if (sumEl) sumEl.innerHTML =
-    `<div class="sum-col"><span class="sum-val" style="color:#ff4444">${shutdowns.length}</span><span class="sum-lbl">Force Maj.</span></div>` +
-    `<div class="sum-col"><span class="sum-val" style="color:#ff8833">${reduced.length}</span><span class="sum-lbl">Reduced</span></div>` +
-    `<div class="sum-col"><span class="sum-val" style="color:#00e5ff">${monitoring.length}</span><span class="sum-lbl">Monitoring</span></div>` +
+    `<div class="sum-col"><span class="sum-val" style="color:var(--red)">${shutdowns.length}</span><span class="sum-lbl">Force Maj.</span></div>` +
+    `<div class="sum-col"><span class="sum-val" style="color:var(--orange)">${reduced.length}</span><span class="sum-lbl">Reduced</span></div>` +
+    `<div class="sum-col"><span class="sum-val" style="color:var(--blue)">${monitoring.length}</span><span class="sum-lbl">Monitoring</span></div>` +
     `<div class="sum-col"><span class="sum-val" style="color:var(--text-dim)">${total}</span><span class="sum-lbl">Total</span></div>`;
 
-  // ── Helper: build one card ──
   function buildCard(d, stripColor) {
     const selected = d.id === selectedId ? 'selected' : '';
     const sc = d.status==='Shutdown'?'b-fm': d.status==='Maintenance'?'b-yellow': d.status==='Reduced'?'b-orange':'b-cyan';
@@ -1806,18 +1453,15 @@ function renderDisruptions() {
                         d.status==='Maintenance'?'Maint. Shutdown':
                         d.status==='Reduced'?'Reduced Rates':'Monitoring';
 
-    // Display name (before ' — ' or ' - ')
     let name = d.company;
     if (name.includes(' \u2014 ')) name = name.split(' \u2014 ')[0].trim();
     else if (name.includes(' - ')) name = name.substring(0, name.indexOf(' - ')).trim();
 
-    // Location: facility name + country
     let facility = '';
     if (d.company.includes(' \u2014 ')) facility = d.company.split(' \u2014 ').slice(1).join(' \u2014 ').trim();
     else if (d.company.includes(' - ')) facility = d.company.substring(d.company.indexOf(' - ') + 3).trim();
     const locStr = facility ? facility + ', ' + d.country : d.country;
 
-    // Intensity dots
     const score = getIntensityScore(d);
     const dotCol = score >= 4 ? '#ff4444' : score >= 2 ? '#f0a020' : '#18c870';
     const dimCol = 'rgba(255,255,255,0.12)';
@@ -1826,16 +1470,13 @@ function renderDisruptions() {
       dotsHtml += `<span class="dis-dot" style="color:${i<=score?dotCol:dimCol}">&#9679;</span>`;
     dotsHtml += '</span>';
 
-    // Confidence
     const confCol = d.confidence==='Confirmed'?'#18c870':d.confidence==='Likely'?'#f5c050':'#5a7a95';
     const confStr = d.confidence || '';
 
-    // Date
     const dateHtml = d.start
       ? `<div class="dis-since"><span class="dis-since-lbl">Since</span><span class="dis-since-val">${d.start}</span></div>`
       : '';
 
-    // Product chips (max 4 visible)
     const prods = Array.isArray(d.products) ? d.products : (d.products ? [d.products] : []);
     const MAX_P = 4;
     let chipsHtml = '';
@@ -1864,7 +1505,6 @@ function renderDisruptions() {
     </div>`;
   }
 
-  // ── Build group sections ──
   let html = '';
   function renderGroup(label, stripColor, arr) {
     if (!arr.length) return;
@@ -1875,12 +1515,12 @@ function renderDisruptions() {
     arr.forEach(d => { html += buildCard(d, stripColor); });
   }
 
-  renderGroup('Force Majeure / Shutdown', '#cc2222', shutdowns);
-  renderGroup('Maintenance Shutdown',     '#d4a800', maintenance);
-  renderGroup('Reduced Rates',            '#e05500', reduced);
-  renderGroup('Monitoring / Alert',       '#00c0d4', monitoring);
+  renderGroup('Force Majeure / Shutdown', '#EF4444', shutdowns);
+  renderGroup('Maintenance Shutdown',     '#F59E0B', maintenance);
+  renderGroup('Reduced Rates',            '#F97316', reduced);
+  renderGroup('Monitoring / Alert',       '#3B82F6', monitoring);
 
-  if (!html) html = `<div style="padding:20px 14px;font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">No results match your filters.</div>`;
+  if (!html) html = `<div style="padding:20px 14px;font-size:12px;color:var(--text-muted)">No results match your filters.</div>`;
   pc.innerHTML = html;
 }
 
@@ -1890,15 +1530,12 @@ function selectItem(id) {
   flyToDisruption(d);
 }
 
-// Find best disruption match for a news item by title/body keywords
 function flyToDisruption(d, switchToDisruptions) {
   if (!d) return;
   selectedId = d.id;
-  // Fly the globe (non-blocking, never causes a freeze)
-  if (globe) globe.pointOfView({ lat: d.lat, lng: d.lng, altitude: 1.2 }, 800);
+  if (map) map.flyTo([d.lat, d.lng], 6, { duration: 0.8 });
 
   if (switchToDisruptions) {
-    // Called from news MAP badge — switch panel to disruptions and scroll
     setTimeout(() => {
       switchPanelTab('disruptions');
       setTimeout(() => {
@@ -1907,12 +1544,12 @@ function flyToDisruption(d, switchToDisruptions) {
       }, 80);
     }, 0);
   } else {
-    // Called from disruptions panel (selectItem) — just re-render to show highlight
     setTimeout(() => renderDisruptions(), 0);
   }
 
-  // Pin tooltip at globe centre after fly animation completes
+  // Pin tooltip at map centre after fly animation completes
   setTimeout(() => {
+    renderMap(); // re-render to show selected highlight
     const gw = document.getElementById('globe-wrap');
     const cx = gw.offsetLeft + Math.round(gw.offsetWidth * 0.5);
     const cy = gw.offsetTop  + Math.round(gw.offsetHeight * 0.42);
@@ -1930,7 +1567,7 @@ function renderFM() {
     const linked = DISRUPTIONS.find(d => d.company && d.company.toLowerCase().includes(f.company.toLowerCase().split(' ')[0]));
     const clickAttr = linked ? `onclick="flyToDisruption(DISRUPTIONS.find(x=>x.id===${linked ? linked.id : 'null'}),true)"` : '';
     html += `<div class="dis-item" ${clickAttr} style="${linked?'cursor:pointer;':''}">
-      <div class="dis-co">${f.company}${linked?'<span style="font-family:var(--font-mono);font-size:7px;color:var(--accent2);margin-left:8px;background:rgba(34,153,238,0.1);padding:1px 5px;border:1px solid rgba(34,153,238,0.3)">MAP</span>':''}</div>
+      <div class="dis-co">${f.company}${linked?'<span style="font-size:9px;color:var(--accent2);margin-left:8px;background:rgba(96,165,250,0.1);padding:1px 5px;border:1px solid rgba(96,165,250,0.3);border-radius:4px">MAP</span>':''}</div>
       <div class="dis-meta">
         <span class="badge b-fm">Force Majeure</span>
         <span class="dis-country">${f.country}</span>
@@ -1951,7 +1588,6 @@ const ADVISORY_HTML = `
     <div class="adv-section">Our Response</div>
     <div class="adv-text">We are working closely with our partners to mitigate the impact. We are evaluating alternative maritime routes, taking into account that they involve significantly longer transit times. Clients with specifically affected orders will be informed individually.</div>
   </div>
-
   <div class="adv-block">
     <div class="adv-title">🚢 Strait of Hormuz — Effectively Closed</div>
     <div class="adv-text">Iran's Revolutionary Guard has warned that no vessel is allowed to pass the Strait of Hormuz. Tanker traffic has collapsed with 150+ vessels stranded or anchored outside the strait. Several tankers have reportedly been damaged and at least one seafarer killed.</div>
@@ -1963,12 +1599,10 @@ const ADVISORY_HTML = `
       <li>Gulf ports (Jebel Ali, Dammam, Abu Dhabi) risk temporary isolation</li>
     </ul>
   </div>
-
   <div class="adv-block">
     <div class="adv-title">🚢 Major Shipping Lines — Operations Suspended</div>
     <div class="adv-text">Container and tanker operators have halted Gulf transits. Major carriers including Maersk, MSC, CMA CGM, Hapag-Lloyd and COSCO have suspended sailings. Japanese groups NYK, MOL and K-Line have ordered ships to safe waters.</div>
   </div>
-
   <div class="adv-block">
     <div class="adv-title">📈 Freight Rates Exploding</div>
     <ul class="adv-list">
@@ -1977,7 +1611,6 @@ const ADVISORY_HTML = `
       <li>Asia–Europe air cargo rates rose more than 6% in a single week</li>
     </ul>
   </div>
-
   <div class="adv-block">
     <div class="adv-title">🔥 Energy Infrastructure Attacks</div>
     <ul class="adv-list">
@@ -1986,7 +1619,6 @@ const ADVISORY_HTML = `
       <li>Drone strike hit energy infrastructure near Fujairah / Abu Dhabi</li>
     </ul>
   </div>
-
   <div class="adv-block">
     <div class="adv-title">🛢 Energy Markets Shocked</div>
     <ul class="adv-list">
@@ -1995,7 +1627,6 @@ const ADVISORY_HTML = `
       <li>Analysts warn oil could break $100+/bbl if Hormuz remains closed</li>
     </ul>
   </div>
-
   <div class="adv-block">
     <div class="adv-title">🌍 Global Force Majeure Cascade</div>
     <div class="adv-text">Force majeure declarations have erupted across multiple sectors and countries:</div>
@@ -2014,8 +1645,6 @@ const ADVISORY_HTML = `
 // ── TAB SWITCHING ──
 function switchTab(tab) {
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('onclick').includes(`'${tab}'`)));
-  const globeWrap = document.getElementById('globe-wrap');
-  const sp = document.getElementById('side-panel');
 
   if (tab === 'products') {
     renderProductsPanel();
@@ -2086,25 +1715,23 @@ function togglePanel() {
   panelCollapsed = !panelCollapsed;
   document.getElementById('side-panel').classList.toggle('collapsed', panelCollapsed);
   document.getElementById('toggle-panel').textContent = panelCollapsed ? '▶ Panel' : '◀ Panel';
-  setTimeout(()=>{ if(globe){ const el=document.getElementById('globeViz'); globe.width(el.clientWidth).height(el.clientHeight); }}, 220);
+  setTimeout(() => { if (map) map.invalidateSize(); }, 220);
 }
 
 // ── API INTEGRATION ──────────────────────────────────────────────────────────
 const API_BASE = '/api/markers';
 
-// Load all user-added markers from the shared database
 async function loadUserMarkersFromAPI() {
   try {
     const r = await fetch(API_BASE);
     if (!r.ok) { console.warn('[API] GET failed:', r.status); return; }
     const markers = await r.json();
     markers.forEach(m => {
-      // Avoid duplicates if called multiple times
       if (!DISRUPTIONS.find(d => d.dbId === m.dbId)) {
         DISRUPTIONS.push({ ...m, userAdded: true });
       }
     });
-    renderGlobe();
+    renderMap();
     renderStats();
     renderDisruptions();
   } catch(err) {
@@ -2112,7 +1739,6 @@ async function loadUserMarkersFromAPI() {
   }
 }
 
-// Save a new marker to the shared database
 async function saveMarkerToAPI(marker, editorKey) {
   const r = await fetch(API_BASE, {
     method: 'POST',
@@ -2127,7 +1753,6 @@ async function saveMarkerToAPI(marker, editorKey) {
   return r.json();
 }
 
-// Delete a marker from the shared database
 async function deleteMarkerFromAPI(dbId, editorKey) {
   const r = await fetch(`${API_BASE}?dbId=${dbId}`, {
     method: 'DELETE',
@@ -2140,32 +1765,28 @@ async function deleteMarkerFromAPI(dbId, editorKey) {
   }
 }
 
-// ── EDITOR KEY (session-scoped, never persisted to disk) ──────────────────
-// Returns null if cancelled, 'OFFLINE' if API unreachable, or the validated key.
+// ── EDITOR KEY ──────────────────────────────────────────────────────────────
 async function promptAndValidateEditorKey() {
   const key = window.prompt('Enter editor key:');
-  if (!key) return null; // user cancelled
+  if (!key) return null;
 
   try {
     const r = await fetch(API_BASE + '?validate=1', {
       headers: { 'x-editor-key': key },
     });
-    if (r.status === 204) return key;  // ✓ only accept explicit "valid" response
+    if (r.status === 204) return key;
     if (r.status === 401) {
       alert('Wrong editor key. Please try again.');
       return null;
     }
-    // 500 = EDITOR_KEY not configured on server; 200 = old API without validate support
     alert('Could not verify key (server returned ' + r.status + '). Make sure EDITOR_KEY is set in Vercel and the latest api/markers.js is deployed.');
     return null;
   } catch (e) {
-    // Network error — do NOT trust the key; require the API to be reachable
     alert('Could not reach server to verify key. Check your deployment.');
     return null;
   }
 }
 
-// Returns a valid key (checking session cache first) or null.
 async function getEditorKey() {
   if (window._editorKey) return window._editorKey;
   const key = await promptAndValidateEditorKey();
@@ -2176,17 +1797,15 @@ async function getEditorKey() {
 // ── BOOT ──
 async function boot() {
   try {
-    initGlobe();
-    renderGlobe();
+    initMap();
+    renderMap();
     renderStats();
     renderDisruptions();
-    document.getElementById('upd-time').textContent = new Date().toLocaleTimeString();
-    // Load shared markers in background (doesn't block the spinner)
     loadUserMarkersFromAPI();
   } catch(err) {
     console.error('[boot] Fatal error:', err);
   } finally {
-    setTimeout(()=>{ document.getElementById('loading').classList.add('hidden'); }, 900);
+    setTimeout(() => { document.getElementById('loading').classList.add('hidden'); }, 900);
   }
 }
 
@@ -2218,7 +1837,6 @@ window.addEventListener('load', function() {
   };
 
   window.amUpdateIntensity = function() {
-    // Sync intensity based on status if user hasn't picked manually
     amRenderDots(_amIntensity);
   };
 
@@ -2247,19 +1865,16 @@ window.addEventListener('load', function() {
     ).join('');
   }
 
-  // Expose so inline onclick works
   window.amRemoveProduct = amRemoveProduct;
 
   window.openAddMarker = async function(lat, lng) {
-    // Require a server-validated editor key before opening the add-marker modal
     const key = await getEditorKey();
-    if (!key) return; // user cancelled or invalid key
+    if (!key) return;
 
     _amProducts = [];
     _amIntensity = 5;
     _amNextId = Math.max(...DISRUPTIONS.map(d=>d.id)) + 1;
 
-    // Reset form
     ['am-company','am-country','am-facility','am-capacity','am-desc','am-source',
      'am-restart','am-prod-input'].forEach(id => {
       const el = document.getElementById(id);
@@ -2271,7 +1886,6 @@ window.addEventListener('load', function() {
     document.getElementById('am-confidence').value = 'Confirmed';
     document.getElementById('am-product-chips').innerHTML = '';
 
-    // Set coordinates
     const latEl = document.getElementById('am-lat');
     const lngEl = document.getElementById('am-lng');
     if (latEl && lat != null) latEl.value = parseFloat(lat.toFixed(4));
@@ -2291,12 +1905,10 @@ window.addEventListener('load', function() {
     document.getElementById('am-overlay').classList.remove('open');
   };
 
-  // Close on backdrop click (event delegation)
   document.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'am-overlay') closeAddMarker();
   });
 
-  // Close on Escape
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape' && document.getElementById('am-overlay').classList.contains('open')) {
       closeAddMarker();
@@ -2317,15 +1929,11 @@ window.addEventListener('load', function() {
     const desc     = (document.getElementById('am-desc').value    || '').trim();
     const source   = (document.getElementById('am-source').value  || '').trim();
 
-    // Validation
     if (!company) { document.getElementById('am-company').focus(); return; }
     if (!country) { document.getElementById('am-country').focus(); return; }
     if (isNaN(lat) || isNaN(lng)) { document.getElementById('am-lat').focus(); return; }
 
-    // Map intensity → impact
     const impact = _amIntensity >= 4 ? 'High' : _amIntensity >= 2 ? 'Medium' : 'Low';
-
-    // Build company string
     const companyStr = facility ? company + ' — ' + facility : company;
 
     const entry = {
@@ -2345,16 +1953,15 @@ window.addEventListener('load', function() {
       source:     source
     };
 
-    const editorKey = window._editorKey; // already verified when modal opened
+    const editorKey = window._editorKey;
     const submitBtn = document.getElementById('am-submit');
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving…'; }
 
     saveMarkerToAPI(entry, editorKey).then(saved => {
-      // Use the server-returned object (includes dbId)
       const finalEntry = { ...entry, ...saved, userAdded: true };
       DISRUPTIONS.push(finalEntry);
       closeAddMarker();
-      renderGlobe();
+      renderMap();
       renderDisruptions();
       renderStats();
       setTimeout(() => {
@@ -2371,11 +1978,10 @@ window.addEventListener('load', function() {
         alert('Could not save marker: ' + err.message);
       }
     }).finally(() => {
-      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Add to Globe'; }
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Add to Map'; }
     });
   };
 
-  // ── REMOVE USER-ADDED MARKER ──────────────────────────────────────────────
   window.removeMarker = async function(id) {
     const d = DISRUPTIONS.find(x => x.id === id);
     if (!d || !d.userAdded) return;
@@ -2389,7 +1995,7 @@ window.addEventListener('load', function() {
       const idx = DISRUPTIONS.findIndex(x => x.id === id);
       if (idx !== -1) DISRUPTIONS.splice(idx, 1);
       if (selectedId === id) selectedId = null;
-      renderGlobe();
+      renderMap();
       renderStats();
       renderDisruptions();
     } catch(err) {
@@ -2402,28 +2008,7 @@ window.addEventListener('load', function() {
     }
   };
 
-  // ── RIGHT-CLICK on globe ──────────────────────────────────────────────
-  // Attach to both the container AND the canvas (Three.js renderer creates canvas
-  // that can absorb contextmenu before it bubbles to the parent div).
-  function _onGlobeRightClick(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!globe) return;
-    const coords = globe.toGlobeCoords(e.clientX, e.clientY);
-    if (!coords) return; // click outside the sphere
-    openAddMarker(coords.lat, coords.lng);
-  }
-
-  const _globeEl = document.getElementById('globeViz');
-  _globeEl.addEventListener('contextmenu', _onGlobeRightClick);
-
-  // Attach to canvas once Three.js renderer has created it
-  setTimeout(function() {
-    const canvas = _globeEl.querySelector('canvas');
-    if (canvas) canvas.addEventListener('contextmenu', _onGlobeRightClick);
-  }, 1500);
-
-  // ── Show hint briefly on first load ──────────────────────────────────
+  // Show hint briefly on first load
   const hint = document.getElementById('rc-hint');
   if (hint) {
     setTimeout(() => {
@@ -2433,7 +2018,6 @@ window.addEventListener('load', function() {
   }
 
 });
-
 </script>
 
 <!-- ── ADD MARKER MODAL ── -->
@@ -2446,7 +2030,6 @@ window.addEventListener('load', function() {
 
     <div id="am-body">
 
-      <!-- Company + Country -->
       <div class="am-row">
         <div class="am-field" style="flex:2">
           <label class="am-label">Company <span class="req">*</span></label>
@@ -2458,13 +2041,11 @@ window.addEventListener('load', function() {
         </div>
       </div>
 
-      <!-- Facility -->
       <div class="am-field">
         <label class="am-label">Facility / Location</label>
         <input id="am-facility" class="am-input" type="text" placeholder="e.g. Ras Laffan Industrial City" autocomplete="off"/>
       </div>
 
-      <!-- Lat / Lng -->
       <div class="am-row">
         <div class="am-field">
           <label class="am-label">Latitude <span class="req">*</span></label>
@@ -2477,7 +2058,6 @@ window.addEventListener('load', function() {
         </div>
       </div>
 
-      <!-- Outage Type + Intensity -->
       <div class="am-row">
         <div class="am-field">
           <label class="am-label">Outage Type <span class="req">*</span></label>
@@ -2501,7 +2081,6 @@ window.addEventListener('load', function() {
         </div>
       </div>
 
-      <!-- Dates -->
       <div class="am-row">
         <div class="am-field">
           <label class="am-label">Outage Start</label>
@@ -2513,7 +2092,6 @@ window.addEventListener('load', function() {
         </div>
       </div>
 
-      <!-- Products -->
       <div class="am-field">
         <label class="am-label">Products Impacted</label>
         <div id="am-product-chips"></div>
@@ -2524,7 +2102,6 @@ window.addEventListener('load', function() {
         </div>
       </div>
 
-      <!-- Capacity + Confidence -->
       <div class="am-row">
         <div class="am-field">
           <label class="am-label">Capacity</label>
@@ -2540,29 +2117,27 @@ window.addEventListener('load', function() {
         </div>
       </div>
 
-      <!-- Description -->
       <div class="am-field">
         <label class="am-label">Description / Type</label>
         <textarea id="am-desc" class="am-textarea" placeholder="e.g. Force Majeure — drone strike damage; 1+ year repair timeline"></textarea>
       </div>
 
-      <!-- Source -->
       <div class="am-field">
         <label class="am-label">Source Link</label>
         <input id="am-source" class="am-input" type="url" placeholder="https://..."/>
       </div>
 
-    </div><!-- /am-body -->
+    </div>
 
     <div id="am-footer">
       <button id="am-cancel" onclick="closeAddMarker()">Cancel</button>
-      <button id="am-submit" onclick="amSubmit()">Add to Globe</button>
+      <button id="am-submit" onclick="amSubmit()">Add to Map</button>
     </div>
   </div>
 </div>
 
 <!-- Right-click hint -->
-<div id="rc-hint">Right-click globe to add a marker</div>
+<div id="rc-hint">Right-click map to add a marker</div>
 
 </body>
 </html>
